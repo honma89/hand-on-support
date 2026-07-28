@@ -30,9 +30,9 @@ class User(Base):
         nullable=False
     )
 
-    password: Mapped[str] = mapped_column(
-        String(255),
-        nullable=False
+    hashed_password: Mapped[str] = mapped_column(
+    String(255),
+    nullable=False
     )
 
     status: Mapped[UserStatus] = mapped_column(
