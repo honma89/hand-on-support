@@ -38,7 +38,8 @@ class AuditLog(Base):
         server_default=func.now()
     )
 
-    metadata: Mapped[dict | None] = mapped_column(
-        JSON,
-        nullable=True
+    log_metadata: Mapped[dict | None] = mapped_column(
+    "metadata",
+    JSON,
+    nullable=True
     )
