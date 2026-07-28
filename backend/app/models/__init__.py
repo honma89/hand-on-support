@@ -15,3 +15,11 @@ from app.models.event_registration import EventRegistration
 from app.models.activity_category import ActivityCategory
 from app.models.activity import Activity
 from app.models.activity_log import ActivityLog
+from app.models.badge import Badge
+from app.models.user_badge import UserBadge
+from app.models.recognition import Recognition
+from app.models.media import Media
+from app.models.document import Document
+from app.models.announcement import Announcement
+from app.models.donation import Donation
+from app.models.audit_log import AuditLog
