@@ -3,7 +3,6 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-.env
 *.egg-info/
 backend/.env
 
@@ -20,3 +19,4 @@ npm-debug.log*
 
 # --- Docker ---
 *.log
+.env

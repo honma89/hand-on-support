@@ -1,49 +1,33 @@
 import uuid
-from datetime import datetime
-from enum import Enum as PyEnum
+from enum import StrEnum
 
-from sqlalchemy import String, Enum, ForeignKey, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.sql import func
+from sqlalchemy import Enum, ForeignKey, String
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
-
-
-class DocumentCategory(str, PyEnum):
-    PROPOSAL = "PROPOSAL"
-    REPORT = "REPORT"
-    NOTICE = "NOTICE"
+from app.db.mixins import TimestampMixin
+from app.db.session import Base
 
 
-class Document(Base):
+class DocumentCategory(StrEnum):
+    PROPOSAL = "proposal"
+    REPORT = "report"
+    NOTICE = "notice"
+
+
+class Document(Base, TimestampMixin):
     __tablename__ = "documents"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        primary_key=True,
-        default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    title: Mapped[str] = mapped_column(
-        String(200),
-        nullable=False
-    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    category: Mapped[DocumentCategory] = mapped_column(Enum(DocumentCategory, name="document_category"), nullable=False)
+    file_url: Mapped[str] = mapped_column(String(500), nullable=False)
 
-    category: Mapped[DocumentCategory] = mapped_column(
-        Enum(DocumentCategory),
-        nullable=False
+    uploaded_by_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
+    uploaded_by: Mapped["User"] = relationship()
 
-    file_url: Mapped[str] = mapped_column(
-        String(500),
-        nullable=False
-    )
-
-    uploaded_by: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False
-    )
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now()
-    )
+    def __repr__(self) -> str:
+        return f"<Document {self.title} ({self.category})>"
