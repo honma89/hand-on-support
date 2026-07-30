@@ -1,6 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
-import type { EventDetail, EventPublic, RegistrationWithEvent } from "@/lib/types";
+import type { EventDetail, EventPublic, EventStatus, RegistrationWithEvent } from "@/lib/types";
+
+export interface EventCreateInput {
+  title: string;
+  description: string;
+  category: string;
+  dzongkhag: string;
+  location_detail?: string;
+  start_datetime: string;
+  end_datetime: string;
+  capacity?: number;
+  points_reward: number;
+  status: EventStatus;
+  image_url?: string;
+  location_id?: string;
+}
+
 
 export function useEvents(params?: { category?: string; dzongkhag?: string }) {
   return useQuery({
@@ -37,6 +53,18 @@ export function useRegisterForEvent(eventId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events", eventId] });
       queryClient.invalidateQueries({ queryKey: ["registrations", "me"] });
+    },
+  });
+}
+
+export function useCreateEvent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: EventCreateInput) =>
+      (await apiClient.post<EventPublic>("/events", data)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
     },
   });
 }

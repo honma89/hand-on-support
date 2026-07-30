@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import type {
   Badge,
+  BadgeCriteriaType,
   DashboardStats,
   LeaderboardEntry,
   NotificationItem,
@@ -9,6 +10,14 @@ import type {
   PointTransaction,
   UserBadge,
 } from "@/lib/types";
+
+export interface BadgeCreateInput {
+  name: string;
+  description: string;
+  icon: string;
+  criteria_type: BadgeCriteriaType;
+  criteria_value: number;
+}
 
 export function usePointBalance() {
   return useQuery({
@@ -62,6 +71,18 @@ export function useUnreadNotificationCount() {
       (await apiClient.get<{ unread_count: number }>("/notifications/unread-count")).data
         .unread_count,
     refetchInterval: 30_000,
+  });
+}
+
+export function useCreateBadge() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: BadgeCreateInput) =>
+      (await apiClient.post<Badge>("/badges", data)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["badges"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+    },
   });
 }
 

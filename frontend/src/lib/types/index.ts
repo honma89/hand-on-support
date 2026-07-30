@@ -73,12 +73,14 @@ export interface LeaderboardEntry {
   total_points: number;
 }
 
+export type BadgeCriteriaType = "events_attended" | "points_earned";
+
 export interface Badge {
   id: string;
   name: string;
   description: string;
   icon: string;
-  criteria_type: "events_attended" | "points_earned";
+  criteria_type: BadgeCriteriaType;
   criteria_value: number;
 }
 
