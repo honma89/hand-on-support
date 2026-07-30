@@ -82,14 +82,34 @@ alembic upgrade head
 ## Modules implemented so far
 
 - [x] Module 0 — Project Foundation & Scaffolding
-- [ ] Module 1 — Authentication
-- [ ] Module 2 — User Profiles
-- [ ] Module 3 — Events
-- [ ] Module 4 — Event Registration
-- [ ] Module 5 — Attendance
-- [ ] Module 6 — Point Bank
-- [ ] Module 7 — Leaderboards
-- [ ] Module 8 — Badges
-- [ ] Module 9 — Admin Dashboard
-- [ ] Module 10 — Analytics
-- [ ] Module 11 — Notifications
+- [x] Module 1 — Authentication
+- [x] Module 2 — User Profiles
+- [x] Module 3 — Events
+- [x] Module 4 — Event Registration
+- [x] Module 5 — Attendance
+- [x] Module 6 — Point Bank
+- [x] Module 7 — Leaderboards
+- [x] Module 8 — Badges
+- [x] Module 9 — Admin Dashboard
+- [x] Module 10 — Analytics
+- [x] Module 11 — Notifications
+
+All modules verified end-to-end against a real Postgres database via
+`backend/scripts/smoke_test.py` (register → login → role promotion → badge
+creation → event publish → registration → attendance → automatic point
+award → automatic badge award → leaderboard → notifications → admin
+dashboard → analytics). Frontend pages (login, register, events list/detail,
+dashboard, leaderboard, notifications, admin dashboard) type-check and
+production-build cleanly against this API contract.
+
+### Known gaps / next steps
+- Frontend: Badges catalog page, per-event attendance-marking UI for
+  organizers/admins, and the `/register/redeem` point-redemption UI are not
+  yet built (their backend endpoints exist and are fully tested).
+- No automated `pytest` suite yet — `scripts/smoke_test.py` is a manual
+  end-to-end script, not a CI-run test suite.
+- No route-level auth guarding/middleware on the frontend yet (pages assume
+  the visitor is logged in where relevant, but don't redirect unauthenticated
+  users away from `/dashboard` etc.).
+- `backend/.env` and `frontend/.env.local` are excluded from the zip —
+  copy from the `.example` files before running.

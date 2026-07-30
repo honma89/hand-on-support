@@ -1,42 +1,34 @@
 import uuid
+from enum import StrEnum
 
 from sqlalchemy import String, Text, Enum, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
-from enum import Enum as PyEnum
+from app.db.mixins import TimestampMixin
+from app.db.session import Base
 
 
-class AddressType(str, PyEnum):
-    BHUTAN = "BHUTAN"
-    INTERNATIONAL = "INTERNATIONAL"
+class AddressType(StrEnum):
+    BHUTAN = "bhutan"
+    INTERNATIONAL = "international"
 
 
-class Address(Base):
+class Address(Base, TimestampMixin):
     __tablename__ = "addresses"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        primary_key=True,
-        default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    address_type: Mapped[AddressType] = mapped_column(
-        Enum(AddressType),
-        nullable=False
-    )
+    address_type: Mapped[AddressType] = mapped_column(Enum(AddressType, name="address_type"), nullable=False)
 
-    country_id: Mapped[uuid.UUID | None]
-
+    # Bhutan administrative hierarchy (nullable — only applies when address_type == BHUTAN)
     dzongkhag_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("dzongkhags.id")
+        UUID(as_uuid=True), ForeignKey("dzongkhags.id", ondelete="SET NULL"), nullable=True
     )
-
     dungkhag_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("dungkhags.id")
+        UUID(as_uuid=True), ForeignKey("dungkhags.id", ondelete="SET NULL"), nullable=True
     )
-
     gewog_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("gewogs.id")
+        UUID(as_uuid=True), ForeignKey("gewogs.id", ondelete="SET NULL"), nullable=True
     )
 
     village: Mapped[str | None] = mapped_column(String(100))

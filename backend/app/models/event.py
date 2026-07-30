@@ -1,89 +1,57 @@
 import uuid
 from datetime import datetime
 
-from enum import Enum as PyEnum
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from sqlalchemy import (
-    String,
-    Text,
-    DateTime,
-    Enum,
-    Integer,
-    ForeignKey
-)
-
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.sql import func
-
-from app.models.base import Base
+from app.db.mixins import TimestampMixin
+from app.db.session import Base
+from app.models.enums import EventStatus
 
 
-class EventStatus(str, PyEnum):
-    DRAFT = "DRAFT"
-    PUBLISHED = "PUBLISHED"
-    ONGOING = "ONGOING"
-    COMPLETED = "COMPLETED"
-    CANCELLED = "CANCELLED"
-
-
-class Event(Base):
+class Event(Base, TimestampMixin):
     __tablename__ = "events"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        primary_key=True,
-        default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    title: Mapped[str] = mapped_column(
-        String(200),
-        nullable=False
-    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    category: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
 
-    description: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True
-    )
+    dzongkhag: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    location_detail: Mapped[str | None] = mapped_column(String(300), nullable=True)
 
-    event_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False
-    )
+    start_datetime: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    end_datetime: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
-    department_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("departments.id"),
-        nullable=False
-    )
+    # None = unlimited capacity
+    capacity: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    location_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("locations.id"),
-        nullable=True
-    )
-
-    max_volunteers: Mapped[int | None] = mapped_column(
-        Integer,
-        nullable=True
-    )
-
-    points_reward: Mapped[int] = mapped_column(
-        Integer,
-        default=0
-    )
-
-    hours_reward: Mapped[float] = mapped_column(
-        default=0
-    )
+    points_reward: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
 
     status: Mapped[EventStatus] = mapped_column(
-        Enum(EventStatus),
-        default=EventStatus.DRAFT
+        Enum(EventStatus, name="event_status"), nullable=False, default=EventStatus.DRAFT
+    )
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Optional structured venue point, in addition to the free-text location_detail above.
+    location_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("locations.id", ondelete="SET NULL"), nullable=True
+    )
+    location: Mapped["Location"] = relationship()
+
+    organizer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    organizer: Mapped["User"] = relationship()
+
+    registrations: Mapped[list["EventRegistration"]] = relationship(
+        back_populates="event", cascade="all, delete-orphan"
+    )
+    attendances: Mapped[list["Attendance"]] = relationship(
+        back_populates="event", cascade="all, delete-orphan"
     )
 
-    created_by: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False
-    )
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now()
-    )
+    def __repr__(self) -> str:
+        return f"<Event {self.title} ({self.status})>"

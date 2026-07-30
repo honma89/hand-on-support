@@ -16,9 +16,14 @@ from app.routers import announcements
 from app.routers import donations
 from app.routers import admin
 
+settings = get_settings()
 
 app = FastAPI(
-    title="Hand On Support API"
+    title=settings.APP_NAME,
+    version="0.1.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
 )
 
 app.include_router(auth.router)
@@ -37,6 +42,25 @@ app.include_router(announcements.router)
 app.include_router(donations.router)
 app.include_router(admin.router)
 
+@app.get("/api/health", tags=["health"])
+async def health_check() -> dict[str, str]:
+    """Liveness/readiness probe used by Docker/Nginx and uptime checks."""
+    return {"status": "ok", "app": settings.APP_NAME, "env": settings.APP_ENV}
+
+
+from app.routers import (  # noqa: E402
+    admin,
+    analytics,
+    attendance,
+    auth,
+    badges,
+    events,
+    leaderboard,
+    notifications,
+    point_bank,
+    registrations,
+    users,
+)
 
 @app.get("/")
 def root():
