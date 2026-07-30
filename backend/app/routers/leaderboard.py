@@ -1,23 +1,42 @@
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-from app.db.session import get_db
-from app.repositories.point_repository import PointRepository
-from app.repositories.user_repository import UserRepository
-from app.schemas.leaderboard import LeaderboardEntry
-from app.services.leaderboard_service import LeaderboardScope, LeaderboardService
+from app.database.session import get_db
+from app.models.volunteer import Volunteer
+from app.models.address import Address
 
-router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
+from app.schemas.badge import LeaderboardEntry
 
-
-def get_leaderboard_service(db: AsyncSession = Depends(get_db)) -> LeaderboardService:
-    return LeaderboardService(PointRepository(db), UserRepository(db))
+router = APIRouter(
+    prefix="/leaderboard",
+    tags=["Leaderboard"]
+)
 
 
 @router.get("", response_model=list[LeaderboardEntry])
-async def get_leaderboard(
-    scope: LeaderboardScope = Query(default=LeaderboardScope.ALL_TIME),
-    limit: int = Query(default=50, ge=1, le=200),
-    service: LeaderboardService = Depends(get_leaderboard_service),
+def get_leaderboard(
+    dzongkhag_id: str | None = None,
+    limit: int = 20,
+    db: Session = Depends(get_db)
 ):
-    return await service.get_leaderboard(scope=scope, limit=limit)
+    query = db.query(Volunteer)
+
+    if dzongkhag_id:
+        query = query.join(
+            Address, Address.id == Volunteer.address_id
+        ).filter(Address.dzongkhag_id == dzongkhag_id)
+
+    volunteers = query.order_by(
+        Volunteer.points_total.desc()
+    ).limit(limit).all()
+
+    return [
+        LeaderboardEntry(
+            volunteer_id=v.id,
+            firstname=v.firstname,
+            lastname=v.lastname,
+            points_total=v.points_total,
+            hours_total=float(v.hours_total)
+        )
+        for v in volunteers
+    ]

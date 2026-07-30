@@ -1,76 +1,84 @@
-import uuid
+from sqlalchemy.orm import Session
+from fastapi import HTTPException
 
-from app.core.exceptions import ForbiddenError, NotFoundError
-from app.models.enums import EventStatus, UserRole
 from app.models.event import Event
-from app.models.user import User
-from app.repositories.event_repository import EventRepository
-from app.schemas.event import EventCreate, EventDetail, EventPublic, EventUpdate
+from app.models.event_registration import EventRegistration, RegistrationStatus
+from app.schemas.event import EventCreate, EventUpdate
 
 
-class EventService:
-    def __init__(self, event_repo: EventRepository):
-        self.event_repo = event_repo
+def create_event(db: Session, data: EventCreate, created_by):
+    event = Event(
+        title=data.title,
+        description=data.description,
+        event_date=data.event_date,
+        department_id=data.department_id,
+        location_id=data.location_id,
+        max_volunteers=data.max_volunteers,
+        points_reward=data.points_reward,
+        hours_reward=data.hours_reward,
+        created_by=created_by
+    )
 
-    async def get_or_raise(self, event_id: uuid.UUID) -> Event:
-        event = await self.event_repo.get_by_id(event_id)
-        if not event:
-            raise NotFoundError("Event not found.")
-        return event
+    db.add(event)
+    db.commit()
+    db.refresh(event)
 
-    async def get_detail(self, event_id: uuid.UUID) -> EventDetail:
-        event = await self.get_or_raise(event_id)
-        return await self._to_detail(event)
+    return event
 
-    async def _to_detail(self, event: Event) -> EventDetail:
-        registered_count = await self.event_repo.count_active_registrations(event.id)
-        spots_remaining = (
-            max(event.capacity - registered_count, 0) if event.capacity is not None else None
+
+def update_event(db: Session, event: Event, data: EventUpdate):
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(event, field, value)
+
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+
+    return event
+
+
+def register_for_event(db: Session, event: Event, user_id):
+    existing = db.query(EventRegistration).filter(
+        EventRegistration.event_id == event.id,
+        EventRegistration.user_id == user_id,
+        EventRegistration.status != RegistrationStatus.CANCELLED
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="Already registered for this event"
         )
-        base = EventPublic.model_validate(event)
-        return EventDetail(
-            **base.model_dump(),
-            registered_count=registered_count,
-            spots_remaining=spots_remaining,
-        )
 
-    async def create(self, data: EventCreate, organizer: User) -> Event:
-        event = Event(**data.model_dump(), organizer_id=organizer.id, status=EventStatus.DRAFT)
-        return await self.event_repo.create(event)
+    if event.max_volunteers is not None:
+        current_count = db.query(EventRegistration).filter(
+            EventRegistration.event_id == event.id,
+            EventRegistration.status != RegistrationStatus.CANCELLED
+        ).count()
 
-    def _assert_can_manage(self, event: Event, actor: User) -> None:
-        if actor.role == UserRole.ADMIN:
-            return
-        if actor.role == UserRole.ORGANIZER and event.organizer_id == actor.id:
-            return
-        raise ForbiddenError("You do not have permission to manage this event.")
+        if current_count >= event.max_volunteers:
+            raise HTTPException(
+                status_code=400,
+                detail="Event has reached maximum volunteers"
+            )
 
-    async def update(self, event_id: uuid.UUID, data: EventUpdate, actor: User) -> Event:
-        event = await self.get_or_raise(event_id)
-        self._assert_can_manage(event, actor)
-        for field, value in data.model_dump(exclude_unset=True).items():
-            setattr(event, field, value)
-        return await self.event_repo.save(event)
+    registration = EventRegistration(
+        event_id=event.id,
+        user_id=user_id
+    )
 
-    async def delete(self, event_id: uuid.UUID, actor: User) -> None:
-        event = await self.get_or_raise(event_id)
-        self._assert_can_manage(event, actor)
-        await self.event_repo.delete(event)
+    db.add(registration)
+    db.commit()
+    db.refresh(registration)
 
-    async def list_events(
-        self,
-        status: EventStatus | None,
-        category: str | None,
-        dzongkhag: str | None,
-        upcoming_only: bool,
-        offset: int,
-        limit: int,
-    ) -> list[Event]:
-        return await self.event_repo.list_filtered(
-            status=status,
-            category=category,
-            dzongkhag=dzongkhag,
-            upcoming_only=upcoming_only,
-            offset=offset,
-            limit=limit,
-        )
+    return registration
+
+
+def cancel_registration(db: Session, registration: EventRegistration):
+    registration.status = RegistrationStatus.CANCELLED
+
+    db.add(registration)
+    db.commit()
+    db.refresh(registration)
+
+    return registration

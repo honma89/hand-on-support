@@ -1,34 +1,36 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
-
-from app.models.enums import BadgeCriteriaType
+from pydantic import BaseModel
 
 
-class BadgeCreate(BaseModel):
-    name: str = Field(min_length=2, max_length=100)
-    description: str = Field(min_length=5, max_length=500)
-    icon: str = Field(default="🏅", max_length=10)
-    criteria_type: BadgeCriteriaType
-    criteria_value: int = Field(gt=0)
-
-
-class BadgePublic(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class BadgeResponse(BaseModel):
     id: uuid.UUID
     name: str
-    description: str
-    icon: str
-    criteria_type: BadgeCriteriaType
-    criteria_value: int
+    description: str | None
+    icon_url: str | None
+    points_required: int
+
+    class Config:
+        from_attributes = True
 
 
-class UserBadgePublic(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class UserBadgeResponse(BaseModel):
     id: uuid.UUID
+    user_id: uuid.UUID
     badge_id: uuid.UUID
-    awarded_at: datetime
-    badge: BadgePublic
+    earned_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class LeaderboardEntry(BaseModel):
+    volunteer_id: uuid.UUID
+    firstname: str
+    lastname: str
+    points_total: int
+    hours_total: float
+
+    class Config:
+        from_attributes = True

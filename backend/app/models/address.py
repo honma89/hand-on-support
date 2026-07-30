@@ -1,8 +1,7 @@
 import uuid
 from enum import StrEnum
 
-from sqlalchemy import Enum, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import String, Text, Enum, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.mixins import TimestampMixin
@@ -31,23 +30,27 @@ class Address(Base, TimestampMixin):
     gewog_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("gewogs.id", ondelete="SET NULL"), nullable=True
     )
-    village: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    # International / free-form fallback fields
-    country: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    city: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    state_province: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    postal_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    village: Mapped[str | None] = mapped_column(String(100))
 
-    street_address: Mapped[str | None] = mapped_column(Text, nullable=True)
-    address_line_2: Mapped[str | None] = mapped_column(Text, nullable=True)
-    house_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    landmark: Mapped[str | None] = mapped_column(Text, nullable=True)
-    full_address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    street_address: Mapped[str | None] = mapped_column(Text)
 
-    dzongkhag: Mapped["Dzongkhag"] = relationship()
-    dungkhag: Mapped["Dungkhag"] = relationship()
-    gewog: Mapped["Gewog"] = relationship()
+    address_line_2: Mapped[str | None] = mapped_column(Text)
 
-    def __repr__(self) -> str:
-        return f"<Address {self.address_type} {self.full_address or ''}>"
+    city: Mapped[str | None] = mapped_column(String(100))
+
+    state_province: Mapped[str | None] = mapped_column(String(100))
+
+    postal_code: Mapped[str | None] = mapped_column(String(20))
+
+    house_number: Mapped[str | None] = mapped_column(String(50))
+
+    landmark: Mapped[str | None] = mapped_column(Text)
+
+    full_address: Mapped[str | None] = mapped_column(Text)
+
+    volunteer = relationship(
+        "Volunteer",
+        back_populates="address",
+        uselist=False
+    )

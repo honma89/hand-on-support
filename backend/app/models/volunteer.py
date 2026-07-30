@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 
 from sqlalchemy import String, Integer, Numeric, Date, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
@@ -48,6 +48,7 @@ class Volunteer(Base):
     )
 
     address_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("addresses.id"),
         nullable=True
     )
 
@@ -69,4 +70,9 @@ class Volunteer(Base):
     tier_level_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("tier_levels.id"),
         nullable=True
+    )
+
+    address = relationship(
+        "Address",
+        back_populates="volunteer"
     )

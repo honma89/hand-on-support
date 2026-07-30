@@ -1,7 +1,20 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import get_settings
+from app.routers import users
+from app.routers import auth
+from app.routers import volunteers
+from app.routers import locations
+from app.routers import departments
+from app.routers import events
+from app.routers import activities
+from app.routers import badges
+from app.routers import leaderboard
+from app.routers import recognitions
+from app.routers import media
+from app.routers import documents
+from app.routers import announcements
+from app.routers import donations
+from app.routers import admin
 
 settings = get_settings()
 
@@ -13,17 +26,21 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
 )
 
-# CORS: credentials=True is required because auth (Module 1) will rely on
-# HttpOnly cookies, which the browser only attaches on cross-origin
-# requests if the server explicitly allows credentials.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(volunteers.router)
+app.include_router(locations.router)
+app.include_router(departments.router)
+app.include_router(events.router)
+app.include_router(activities.router)
+app.include_router(badges.router)
+app.include_router(leaderboard.router)
+app.include_router(recognitions.router)
+app.include_router(media.router)
+app.include_router(documents.router)
+app.include_router(announcements.router)
+app.include_router(donations.router)
+app.include_router(admin.router)
 
 @app.get("/api/health", tags=["health"])
 async def health_check() -> dict[str, str]:
@@ -45,14 +62,8 @@ from app.routers import (  # noqa: E402
     users,
 )
 
-app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
-app.include_router(users.router, prefix=settings.API_V1_PREFIX)
-app.include_router(events.router, prefix=settings.API_V1_PREFIX)
-app.include_router(registrations.router, prefix=settings.API_V1_PREFIX)
-app.include_router(attendance.router, prefix=settings.API_V1_PREFIX)
-app.include_router(point_bank.router, prefix=settings.API_V1_PREFIX)
-app.include_router(leaderboard.router, prefix=settings.API_V1_PREFIX)
-app.include_router(badges.router, prefix=settings.API_V1_PREFIX)
-app.include_router(admin.router, prefix=settings.API_V1_PREFIX)
-app.include_router(analytics.router, prefix=settings.API_V1_PREFIX)
-app.include_router(notifications.router, prefix=settings.API_V1_PREFIX)
+@app.get("/")
+def root():
+    return {
+        "message": "Hand On Support API running"
+    }

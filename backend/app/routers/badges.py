@@ -1,55 +1,46 @@
-import uuid
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from app.database.session import get_db
+from app.core.dependencies import get_current_user, get_current_admin
+from app.models.user import User
+from app.models.badge import Badge
+from app.models.user_badge import UserBadge
 
-from app.db.session import get_db
-from app.deps import CurrentUser, require_admin
-from app.repositories.attendance_repository import AttendanceRepository
-from app.repositories.badge_repository import BadgeRepository
-from app.repositories.point_repository import PointRepository
-from app.schemas.badge import BadgeCreate, BadgePublic, UserBadgePublic
-from app.services.badge_service import BadgeService
+from app.schemas.badge import BadgeResponse, UserBadgeResponse
+from app.services.badge_service import award_badge_manually
 
-router = APIRouter(prefix="/badges", tags=["badges"])
-
-
-def get_badge_service(db: AsyncSession = Depends(get_db)) -> BadgeService:
-    return BadgeService(BadgeRepository(db), AttendanceRepository(db), PointRepository(db))
-
-
-@router.get("", response_model=list[BadgePublic])
-async def list_badges(service: BadgeService = Depends(get_badge_service)):
-    return await service.list_badges()
-
-
-@router.get("/me", response_model=list[UserBadgePublic])
-async def list_my_badges(
-    current_user: CurrentUser,
-    service: BadgeService = Depends(get_badge_service),
-):
-    return await service.list_user_badges(current_user.id)
-
-
-@router.get("/users/{user_id}", response_model=list[UserBadgePublic])
-async def list_user_badges(
-    user_id: uuid.UUID,
-    service: BadgeService = Depends(get_badge_service),
-):
-    return await service.list_user_badges(user_id)
-
-
-@router.post(
-    "",
-    response_model=BadgePublic,
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_admin)],
+router = APIRouter(
+    prefix="/badges",
+    tags=["Badges"]
 )
-async def create_badge(
-    data: BadgeCreate,
-    db: AsyncSession = Depends(get_db),
-    service: BadgeService = Depends(get_badge_service),
+
+
+@router.get("", response_model=list[BadgeResponse])
+def list_badges(db: Session = Depends(get_db)):
+    return db.query(Badge).order_by(Badge.points_required).all()
+
+
+@router.get("/me", response_model=list[UserBadgeResponse])
+def my_badges(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    badge = await service.create_badge(data)
-    await db.commit()
-    return badge
+    return db.query(UserBadge).filter(
+        UserBadge.user_id == current_user.id
+    ).all()
+
+
+@router.post("/{badge_id}/award/{user_id}", response_model=UserBadgeResponse)
+def award_badge(
+    badge_id: str,
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin)
+):
+    badge = db.query(Badge).filter(Badge.id == badge_id).first()
+
+    if not badge:
+        raise HTTPException(status_code=404, detail="Badge not found")
+
+    return award_badge_manually(db, user_id, badge_id)

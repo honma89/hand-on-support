@@ -1,68 +1,62 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel
 
-from app.models.enums import EventStatus
-from app.schemas.user import UserPublic
+from app.models.event import EventStatus
+from app.models.event_registration import RegistrationStatus
 
 
 class EventCreate(BaseModel):
-    title: str = Field(min_length=3, max_length=200)
-    description: str = Field(min_length=10)
-    category: str = Field(min_length=2, max_length=100)
-    dzongkhag: str = Field(min_length=2, max_length=100)
-    location_detail: str | None = Field(default=None, max_length=300)
-    start_datetime: datetime
-    end_datetime: datetime
-    capacity: int | None = Field(default=None, gt=0)
-    points_reward: int = Field(default=10, ge=0)
-    image_url: str | None = Field(default=None, max_length=500)
-
-    @field_validator("end_datetime")
-    @classmethod
-    def end_after_start(cls, v: datetime, info):
-        start = info.data.get("start_datetime")
-        if start and v <= start:
-            raise ValueError("end_datetime must be after start_datetime")
-        return v
+    title: str
+    description: str | None = None
+    event_date: datetime
+    department_id: uuid.UUID
+    location_id: uuid.UUID | None = None
+    max_volunteers: int | None = None
+    points_reward: int = 0
+    hours_reward: float = 0
 
 
 class EventUpdate(BaseModel):
-    title: str | None = Field(default=None, min_length=3, max_length=200)
-    description: str | None = Field(default=None, min_length=10)
-    category: str | None = Field(default=None, min_length=2, max_length=100)
-    dzongkhag: str | None = Field(default=None, min_length=2, max_length=100)
-    location_detail: str | None = Field(default=None, max_length=300)
-    start_datetime: datetime | None = None
-    end_datetime: datetime | None = None
-    capacity: int | None = Field(default=None, gt=0)
-    points_reward: int | None = Field(default=None, ge=0)
+    title: str | None = None
+    description: str | None = None
+    event_date: datetime | None = None
+    location_id: uuid.UUID | None = None
+    max_volunteers: int | None = None
+    points_reward: int | None = None
+    hours_reward: float | None = None
     status: EventStatus | None = None
-    image_url: str | None = Field(default=None, max_length=500)
 
 
-class EventPublic(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class EventResponse(BaseModel):
     id: uuid.UUID
     title: str
-    description: str
-    category: str
-    dzongkhag: str
-    location_detail: str | None
-    start_datetime: datetime
-    end_datetime: datetime
-    capacity: int | None
+    description: str | None
+    event_date: datetime
+    department_id: uuid.UUID
+    location_id: uuid.UUID | None
+    max_volunteers: int | None
     points_reward: int
+    hours_reward: float
     status: EventStatus
-    image_url: str | None
-    organizer_id: uuid.UUID
+    created_by: uuid.UUID
     created_at: datetime
 
+    class Config:
+        from_attributes = True
 
-class EventDetail(EventPublic):
-    """Adds computed registration counts — used on the event detail page."""
 
-    registered_count: int = 0
-    spots_remaining: int | None = None
+class EventRegistrationResponse(BaseModel):
+    id: uuid.UUID
+    event_id: uuid.UUID
+    user_id: uuid.UUID
+    status: RegistrationStatus
+    registered_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class RegistrationStatusUpdate(BaseModel):
+    status: RegistrationStatus
