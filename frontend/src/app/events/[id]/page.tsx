@@ -1,9 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { Calendar, MapPin, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useCurrentUser } from "@/lib/hooks/use-auth";
 import {
   useCancelRegistration,
@@ -39,82 +37,98 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   const myRegistration = myRegistrations?.find((r) => r.event_id === id && r.status !== "cancelled");
 
   if (isLoading) {
-    return <main className="container py-8 text-muted-foreground">Loading event…</main>;
+    return (
+      <main className="min-h-screen bg-background px-margin-mobile md:px-margin-desktop py-xl">
+        <p className="text-on-surface-variant font-body-md text-body-md">Loading event…</p>
+      </main>
+    );
   }
 
   if (!event) {
-    return <main className="container py-8 text-destructive">Event not found.</main>;
+    return (
+      <main className="min-h-screen bg-background px-margin-mobile md:px-margin-desktop py-xl">
+        <p className="text-error font-body-md text-body-md">Event not found.</p>
+      </main>
+    );
   }
 
   const isFull = event.spots_remaining !== null && event.spots_remaining <= 0;
 
   return (
-    <main className="container max-w-3xl py-8">
-      <div className="mb-2 inline-flex rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-        {event.category}
-      </div>
-      <h1 className="mb-4 text-3xl font-bold">{event.title}</h1>
+    <main className="min-h-screen bg-background px-margin-mobile md:px-margin-desktop py-xl">
+      <div className="max-w-3xl mx-auto">
+        <span className="inline-flex bg-secondary-container/10 text-secondary px-sm py-xs rounded-full font-label-md text-label-md mb-sm">
+          {event.category}
+        </span>
+        <h1 className="font-display-lg text-headline-lg md:text-display-lg text-on-surface mb-md">
+          {event.title}
+        </h1>
 
-      <div className="mb-6 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 shrink-0" />
-          {formatDateRange(event.start_datetime, event.end_datetime)}
+        <div className="grid gap-sm sm:grid-cols-2 mb-lg font-body-md text-body-md text-on-surface-variant">
+          <div className="flex items-center gap-xs">
+            <span className="material-symbols-outlined text-lg">calendar_month</span>
+            {formatDateRange(event.start_datetime, event.end_datetime)}
+          </div>
+          <div className="flex items-center gap-xs">
+            <span className="material-symbols-outlined text-lg">location_on</span>
+            {event.dzongkhag}
+            {event.location_detail ? ` — ${event.location_detail}` : ""}
+          </div>
+          <div className="flex items-center gap-xs text-primary font-label-md text-label-md">
+            <span className="material-symbols-outlined text-lg">stars</span>
+            {event.points_reward} points on completion
+          </div>
+          <div className="flex items-center gap-xs">
+            <span className="material-symbols-outlined text-lg">group</span>
+            {event.capacity
+              ? `${event.registered_count} / ${event.capacity} registered`
+              : `${event.registered_count} registered`}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 shrink-0" />
-          {event.dzongkhag}
-          {event.location_detail ? ` — ${event.location_detail}` : ""}
+
+        <div className="glass-card rounded-xl p-md mb-lg">
+          <p className="font-body-md text-body-md text-on-surface-variant whitespace-pre-line leading-relaxed">
+            {event.description}
+          </p>
         </div>
-        <div className="flex items-center gap-2 font-medium text-accent-foreground">
-          <Trophy className="h-4 w-4 shrink-0" />
-          {event.points_reward} points on completion
-        </div>
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 shrink-0" />
-          {event.capacity
-            ? `${event.registered_count} / ${event.capacity} registered`
-            : `${event.registered_count} registered`}
-        </div>
-      </div>
 
-      <Card className="mb-6">
-        <CardContent className="whitespace-pre-line pt-6 text-sm leading-relaxed">
-          {event.description}
-        </CardContent>
-      </Card>
+        {!user && (
+          <p className="font-body-md text-body-md text-on-surface-variant">
+            Log in to register for this event.
+          </p>
+        )}
 
-      {!user && (
-        <p className="text-sm text-muted-foreground">Log in to register for this event.</p>
-      )}
-
-      {user && !myRegistration && (
-        <Button
-          size="lg"
-          onClick={() => registerMutation.mutate()}
-          disabled={registerMutation.isPending}
-        >
-          {registerMutation.isPending
-            ? "Registering…"
-            : isFull
-              ? "Join waitlist"
-              : "Register for this event"}
-        </Button>
-      )}
-
-      {user && myRegistration && (
-        <div className="flex items-center gap-3">
-          <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-            {myRegistration.status === "waitlisted" ? "You're on the waitlist" : "You're registered"}
-          </span>
+        {user && !myRegistration && (
           <Button
-            variant="outline"
-            onClick={() => cancelMutation.mutate()}
-            disabled={cancelMutation.isPending}
+            size="lg"
+            className="rounded-full"
+            onClick={() => registerMutation.mutate()}
+            disabled={registerMutation.isPending}
           >
-            {cancelMutation.isPending ? "Cancelling…" : "Cancel registration"}
+            {registerMutation.isPending
+              ? "Registering…"
+              : isFull
+                ? "Join waitlist"
+                : "Register for this event"}
           </Button>
-        </div>
-      )}
+        )}
+
+        {user && myRegistration && (
+          <div className="flex items-center gap-sm">
+            <span className="rounded-full bg-primary-container/20 px-sm py-xs font-label-md text-label-md text-primary">
+              {myRegistration.status === "waitlisted" ? "You're on the waitlist" : "You're registered"}
+            </span>
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={() => cancelMutation.mutate()}
+              disabled={cancelMutation.isPending}
+            >
+              {cancelMutation.isPending ? "Cancelling…" : "Cancel registration"}
+            </Button>
+          </div>
+        )}
+      </div>
     </main>
   );
 }

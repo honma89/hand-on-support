@@ -49,3 +49,9 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         except Exception:
             await session.rollback()
             raise
+
+
+# Import every ORM model module now that Base is defined, so SQLAlchemy's
+# mapper registry always has every class available for string-based
+# relationship() lookups -- see app/models/__init__.py for why this matters.
+import app.models  # noqa: E402,F401

@@ -1,54 +1,49 @@
 "use client";
 
-import {
-  Award,
-  Calendar,
-  CheckCircle2,
-  ClipboardList,
-  Trophy,
-  Users,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAdminDashboard } from "@/lib/hooks/use-rewards";
 
 const statCards = [
-  { key: "total_users" as const, label: "Total Users", icon: Users },
-  { key: "total_volunteers" as const, label: "Volunteers", icon: Users },
-  { key: "total_events" as const, label: "Total Events", icon: Calendar },
-  { key: "upcoming_events" as const, label: "Upcoming Events", icon: Calendar },
-  { key: "total_registrations" as const, label: "Registrations", icon: ClipboardList },
-  { key: "total_attendance_present" as const, label: "Attendance (Present)", icon: CheckCircle2 },
-  { key: "total_points_awarded" as const, label: "Points Awarded", icon: Trophy },
-  { key: "total_badges_awarded" as const, label: "Badges Awarded", icon: Award },
+  { key: "total_users" as const, label: "Total Users", icon: "group" },
+  { key: "total_volunteers" as const, label: "Volunteers", icon: "volunteer_activism" },
+  { key: "total_events" as const, label: "Total Events", icon: "event" },
+  { key: "upcoming_events" as const, label: "Upcoming Events", icon: "upcoming" },
+  { key: "total_registrations" as const, label: "Registrations", icon: "how_to_reg" },
+  { key: "total_attendance_present" as const, label: "Attendance (Present)", icon: "task_alt" },
+  { key: "total_points_awarded" as const, label: "Points Awarded", icon: "stars" },
+  { key: "total_badges_awarded" as const, label: "Badges Awarded", icon: "military_tech" },
 ];
 
 export default function AdminDashboardPage() {
   const { data: stats, isLoading, isError } = useAdminDashboard();
 
   return (
-    <main className="container py-8">
-      <h1 className="mb-6 text-3xl font-bold">Admin Dashboard</h1>
+    <main className="min-h-screen bg-background px-margin-mobile md:px-margin-desktop py-xl">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="font-display-lg text-headline-lg md:text-display-lg text-on-surface mb-lg">
+          Admin Dashboard
+        </h1>
 
-      {isLoading && <p className="text-muted-foreground">Loading stats…</p>}
-      {isError && (
-        <p className="text-destructive">
-          Could not load dashboard stats. Admin access is required.
-        </p>
-      )}
+        {isLoading && <p className="text-on-surface-variant font-body-md text-body-md">Loading stats…</p>}
+        {isError && (
+          <p className="text-error font-body-md text-body-md">
+            Could not load dashboard stats. Admin access is required.
+          </p>
+        )}
 
-      {stats && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {statCards.map(({ key, label, icon: Icon }) => (
-            <Card key={key}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent className="text-2xl font-bold">{stats[key]}</CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+        {stats && (
+          <div className="grid gap-gutter sm:grid-cols-2 lg:grid-cols-4">
+            {statCards.map(({ key, label, icon }) => (
+              <div key={key} className="glass-card rounded-xl p-md shadow-ambient shadow-ambient-hover transition-shadow">
+                <div className="flex items-center justify-between mb-sm">
+                  <p className="font-label-md text-label-md text-on-surface-variant">{label}</p>
+                  <span className="material-symbols-outlined text-on-surface-variant text-xl">{icon}</span>
+                </div>
+                <p className="font-headline-lg text-headline-lg text-on-surface">{stats[key]}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </main>
   );
 }

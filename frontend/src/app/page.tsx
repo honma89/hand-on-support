@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { useEvents } from "@/lib/hooks/use-events";
 
 interface HealthResponse {
   status: string;
@@ -9,17 +10,24 @@ interface HealthResponse {
   env: string;
 }
 
+function formatEventDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+}
+
 export default function HomePage() {
-  const { data, isLoading, isError } = useQuery({
+  const { data } = useQuery({
     queryKey: ["health"],
     queryFn: async () => {
       // Health check lives at /api/health (outside the /v1 prefix),
-      // so we call axios directly instead of the apiClient instance.
+      // so we call apiClient's underlying fetch directly instead of the
+      // versioned apiClient instance.
       const res = await fetch("/api/health");
       if (!res.ok) throw new Error("API unreachable");
       return (await res.json()) as HealthResponse;
     },
   });
+  const { data: events } = useEvents();
+  const featured = events?.slice(0, 3) ?? [];
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -92,40 +100,32 @@ export default function HomePage() {
             </a>
           </div>
 
+          {featured.length === 0 && (
+            <p className="mt-10 text-on-surface-variant">
+              No events scheduled yet — check back soon.
+            </p>
+          )}
+
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            <div className="group overflow-hidden rounded-[28px] bg-white shadow-ambient transition hover:shadow-ambient-hover">
-              <div className="h-52 bg-surface"></div>
-              <div className="p-6">
-                <div className="mb-4 inline-flex rounded-full bg-secondary-container/10 px-3 py-1 text-xs font-semibold text-secondary">
-                  Campaign
+            {featured.map((event) => (
+              <a
+                key={event.id}
+                href={`/events/${event.id}`}
+                className="group overflow-hidden rounded-[28px] bg-white shadow-ambient transition hover:shadow-ambient-hover"
+              >
+                <div className="h-52 bg-gradient-to-br from-primary-container/40 to-secondary-container/30" />
+                <div className="p-6">
+                  <div className="mb-4 inline-flex rounded-full bg-secondary-container/10 px-3 py-1 text-xs font-semibold text-secondary">
+                    {event.category}
+                  </div>
+                  <h3 className="text-xl font-semibold text-on-surface">{event.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-on-surface-variant">{event.dzongkhag}</p>
+                  <span className="mt-5 inline-flex text-sm font-semibold text-primary">
+                    {formatEventDate(event.start_datetime)}
+                  </span>
                 </div>
-                <h3 className="text-xl font-semibold text-on-surface">City-Wide Clean Up Drive</h3>
-                <p className="mt-3 text-sm leading-6 text-on-surface-variant">Thimphu Central Park</p>
-                <span className="mt-5 inline-flex text-sm font-semibold text-primary">Oct 12</span>
-              </div>
-            </div>
-            <div className="group overflow-hidden rounded-[28px] bg-white shadow-ambient transition hover:shadow-ambient-hover">
-              <div className="h-52 bg-surface"></div>
-              <div className="p-6">
-                <div className="mb-4 inline-flex rounded-full bg-primary-container/10 px-3 py-1 text-xs font-semibold text-primary">
-                  Workshop
-                </div>
-                <h3 className="text-xl font-semibold text-on-surface">Youth Leadership Training</h3>
-                <p className="mt-3 text-sm leading-6 text-on-surface-variant">Youth Center, Paro</p>
-                <span className="mt-5 inline-flex text-sm font-semibold text-secondary">Oct 18</span>
-              </div>
-            </div>
-            <div className="group overflow-hidden rounded-[28px] bg-white shadow-ambient transition hover:shadow-ambient-hover">
-              <div className="h-52 bg-surface"></div>
-              <div className="p-6">
-                <div className="mb-4 inline-flex rounded-full bg-tertiary-container/10 px-3 py-1 text-xs font-semibold text-tertiary">
-                  Volunteer
-                </div>
-                <h3 className="text-xl font-semibold text-on-surface">Winter Relief Distribution</h3>
-                <p className="mt-3 text-sm leading-6 text-on-surface-variant">Multiple Locations</p>
-                <span className="mt-5 inline-flex text-sm font-semibold text-tertiary">Nov 05</span>
-              </div>
-            </div>
+              </a>
+            ))}
           </div>
         </div>
       </section>

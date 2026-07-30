@@ -96,7 +96,7 @@ async def main():
         event_id = r.json()["id"]
         print("✓ Event created:", r.json()["title"])
 
-        r = await client.put(
+        r = await client.patch(
             f"/api/v1/events/{event_id}", json={"status": "published"}, cookies=admin_cookies
         )
         assert r.status_code == 200, r.text

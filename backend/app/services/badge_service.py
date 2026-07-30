@@ -24,6 +24,16 @@ class BadgeService:
     async def list_all(self) -> list[Badge]:
         return await self.badge_repo.list_all()
 
+    async def create_badge(self, name: str, description: str, icon: str, criteria_type, criteria_value: int) -> Badge:
+        badge = Badge(
+            name=name,
+            description=description,
+            icon=icon,
+            criteria_type=criteria_type,
+            criteria_value=criteria_value,
+        )
+        return await self.badge_repo.create(badge)
+
     async def list_for_user(self, user_id: uuid.UUID) -> list[UserBadge]:
         return await self.badge_repo.list_for_user(user_id)
 

@@ -1,9 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { apiClient } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { useMyNotifications } from "@/lib/hooks/use-rewards";
@@ -32,36 +30,48 @@ export default function NotificationsPage() {
   };
 
   return (
-    <main className="container max-w-2xl py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Notifications</h1>
-        <Button variant="outline" size="sm" onClick={markAllRead}>
-          Mark all read
-        </Button>
-      </div>
+    <main className="min-h-screen bg-background px-margin-mobile md:px-margin-desktop py-xl">
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center justify-between mb-lg">
+          <h1 className="font-display-lg text-headline-lg md:text-display-lg text-on-surface">
+            Notifications
+          </h1>
+          <Button variant="outline" size="sm" className="rounded-full" onClick={markAllRead}>
+            Mark all read
+          </Button>
+        </div>
 
-      {isLoading && <p className="text-muted-foreground">Loading notifications…</p>}
+        {isLoading && <p className="text-on-surface-variant font-body-md text-body-md">Loading notifications…</p>}
 
-      <div className="space-y-2">
-        {notifications?.map((n) => (
-          <Card
-            key={n.id}
-            className={cn("cursor-pointer", !n.is_read && "border-primary/50 bg-primary/5")}
-            onClick={() => !n.is_read && markRead(n.id)}
-          >
-            <CardContent className="flex items-start gap-3 py-4">
-              <Bell className={cn("mt-0.5 h-4 w-4 shrink-0", n.is_read ? "text-muted-foreground" : "text-primary")} />
+        <div className="space-y-sm">
+          {notifications?.map((n) => (
+            <div
+              key={n.id}
+              className={cn(
+                "glass-card rounded-xl p-md cursor-pointer flex items-start gap-sm shadow-ambient",
+                !n.is_read && "border-l-4 border-primary-container",
+              )}
+              onClick={() => !n.is_read && markRead(n.id)}
+            >
+              <span
+                className={cn(
+                  "material-symbols-outlined mt-0.5",
+                  n.is_read ? "text-on-surface-variant" : "text-primary",
+                )}
+              >
+                notifications
+              </span>
               <div className="flex-1">
-                <p className="font-medium">{n.title}</p>
-                <p className="text-sm text-muted-foreground">{n.message}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{timeAgo(n.created_at)}</p>
+                <p className="font-label-md text-label-md text-on-surface">{n.title}</p>
+                <p className="font-body-md text-body-md text-on-surface-variant">{n.message}</p>
+                <p className="font-body-md text-xs text-on-surface-variant mt-xs">{timeAgo(n.created_at)}</p>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-        {notifications && notifications.length === 0 && (
-          <p className="text-sm text-muted-foreground">You&apos;re all caught up.</p>
-        )}
+            </div>
+          ))}
+          {notifications && notifications.length === 0 && (
+            <p className="font-body-md text-body-md text-on-surface-variant">You&apos;re all caught up.</p>
+          )}
+        </div>
       </div>
     </main>
   );
