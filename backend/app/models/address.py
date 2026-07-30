@@ -1,7 +1,7 @@
 import uuid
 
 from sqlalchemy import String, Text, Enum, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 from enum import Enum as PyEnum
@@ -56,3 +56,9 @@ class Address(Base):
     landmark: Mapped[str | None] = mapped_column(Text)
 
     full_address: Mapped[str | None] = mapped_column(Text)
+
+    volunteer = relationship(
+        "Volunteer",
+        back_populates="address",
+        uselist=False
+    )

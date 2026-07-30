@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.volunteer import Volunteer
@@ -10,6 +11,15 @@ def create_volunteer(
     user: User,
     volunteer_data: VolunteerCreate
 ):
+    existing = db.query(Volunteer).filter(
+        Volunteer.user_id == user.id
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="A volunteer profile already exists for this user"
+        )
 
     volunteer = Volunteer(
         user_id=user.id,
