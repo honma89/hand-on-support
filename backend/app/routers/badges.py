@@ -1,46 +1,36 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.session import get_db
-from app.core.dependencies import get_current_user, get_current_admin
-from app.models.user import User
-from app.models.badge import Badge
-from app.models.user_badge import UserBadge
-
+from app.db.session import get_db
+from app.deps import CurrentUser
+from app.repositories.attendance_repository import AttendanceRepository
+from app.repositories.badge_repository import BadgeRepository
+from app.repositories.notification_repository import NotificationRepository
+from app.repositories.point_repository import PointRepository
 from app.schemas.badge import BadgeResponse, UserBadgeResponse
-from app.services.badge_service import award_badge_manually
+from app.services.badge_service import BadgeService
+from app.services.notification_service import NotificationService
 
-router = APIRouter(
-    prefix="/badges",
-    tags=["Badges"]
-)
+router = APIRouter(prefix="/badges", tags=["badges"])
+
+
+def get_badge_service(db: AsyncSession = Depends(get_db)) -> BadgeService:
+    return BadgeService(
+        BadgeRepository(db),
+        AttendanceRepository(db),
+        PointRepository(db),
+        NotificationService(NotificationRepository(db)),
+    )
 
 
 @router.get("", response_model=list[BadgeResponse])
-def list_badges(db: Session = Depends(get_db)):
-    return db.query(Badge).order_by(Badge.points_required).all()
+async def list_badges(service: BadgeService = Depends(get_badge_service)):
+    return await service.list_all()
 
 
 @router.get("/me", response_model=list[UserBadgeResponse])
-def my_badges(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+async def my_badges(
+    current_user: CurrentUser,
+    service: BadgeService = Depends(get_badge_service),
 ):
-    return db.query(UserBadge).filter(
-        UserBadge.user_id == current_user.id
-    ).all()
-
-
-@router.post("/{badge_id}/award/{user_id}", response_model=UserBadgeResponse)
-def award_badge(
-    badge_id: str,
-    user_id: str,
-    db: Session = Depends(get_db),
-    current_admin: User = Depends(get_current_admin)
-):
-    badge = db.query(Badge).filter(Badge.id == badge_id).first()
-
-    if not badge:
-        raise HTTPException(status_code=404, detail="Badge not found")
-
-    return award_badge_manually(db, user_id, badge_id)
+    return await service.list_for_user(current_user.id)

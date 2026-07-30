@@ -2,68 +2,90 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+:root {
+  color-scheme: light;
+  font-family: var(--font-body), Inter, sans-serif;
+  --background: 249 249 249;
+  --foreground: 26 28 28;
+  --card: 255 255 255;
+  --card-foreground: 26 28 28;
+  --primary: 116 91 0;
+  --primary-foreground: 255 255 255;
+  --primary-container: 255 204 0;
+  --primary-fixed: 255 224 139;
+  --primary-fixed-dim: 241 193 0;
+  --secondary: 163 62 0;
+  --secondary-foreground: 255 255 255;
+  --secondary-container: 254 101 0;
+  --tertiary: 0 104 116;
+  --tertiary-foreground: 255 255 255;
+  --tertiary-container: 0 231 254;
+  --surface: 249 249 249;
+  --surface-variant: 226 226 226;
+  --border: 128 118 95;
+  --input: 226 226 226;
+  --ring: 116 91 0;
+  --radius: 0.75rem;
+}
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+html {
+  scroll-behavior: smooth;
+}
 
-    --primary: 158 64% 32%;
-    --primary-foreground: 0 0% 100%;
+body {
+  @apply bg-background text-foreground antialiased;
+  min-height: 100vh;
+}
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display), Montserrat, sans-serif;
+}
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
 
-    --accent: 43 96% 56%;
-    --accent-foreground: 222 47% 11%;
+.shadow-ambient {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+.shadow-ambient-hover:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 158 64% 32%;
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
 
-    --radius: 0.5rem;
-  }
+.btn-primary {
+  background-color: rgb(var(--primary-container));
+  color: rgb(var(--primary-foreground));
+  transition: all 500ms ease;
+}
 
-  .dark {
-    --background: 222 47% 8%;
-    --foreground: 210 40% 98%;
+.btn-primary:hover {
+  background-color: rgb(var(--primary-fixed-dim));
+}
 
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+.btn-secondary {
+  border: 2px solid rgb(var(--secondary-container));
+  color: rgb(var(--secondary));
+  background-color: transparent;
+  transition: all 500ms ease;
+}
 
-    --primary: 158 64% 42%;
-    --primary-foreground: 222 47% 8%;
-
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 43 96% 56%;
-    --accent-foreground: 222 47% 8%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 158 64% 42%;
-  }
-
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
+.btn-secondary:hover {
+  background-color: rgb(var(--secondary-container));
+  color: rgb(var(--secondary-foreground));
 }

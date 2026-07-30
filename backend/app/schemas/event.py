@@ -1,62 +1,60 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.event import EventStatus
-from app.models.event_registration import RegistrationStatus
+from app.models.enums import EventStatus
 
 
 class EventCreate(BaseModel):
-    title: str
-    description: str | None = None
-    event_date: datetime
-    department_id: uuid.UUID
+    title: str = Field(min_length=3, max_length=200)
+    description: str
+    category: str = Field(max_length=100)
+    dzongkhag: str = Field(max_length=100)
+    location_detail: str | None = None
+    start_datetime: datetime
+    end_datetime: datetime
+    capacity: int | None = None
+    points_reward: int = 10
+    status: EventStatus = EventStatus.DRAFT
+    image_url: str | None = None
     location_id: uuid.UUID | None = None
-    max_volunteers: int | None = None
-    points_reward: int = 0
-    hours_reward: float = 0
 
 
 class EventUpdate(BaseModel):
-    title: str | None = None
+    title: str | None = Field(default=None, min_length=3, max_length=200)
     description: str | None = None
-    event_date: datetime | None = None
-    location_id: uuid.UUID | None = None
-    max_volunteers: int | None = None
+    category: str | None = Field(default=None, max_length=100)
+    dzongkhag: str | None = Field(default=None, max_length=100)
+    location_detail: str | None = None
+    start_datetime: datetime | None = None
+    end_datetime: datetime | None = None
+    capacity: int | None = None
     points_reward: int | None = None
-    hours_reward: float | None = None
     status: EventStatus | None = None
+    image_url: str | None = None
+    location_id: uuid.UUID | None = None
 
 
-class EventResponse(BaseModel):
+class EventPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     title: str
-    description: str | None
-    event_date: datetime
-    department_id: uuid.UUID
-    location_id: uuid.UUID | None
-    max_volunteers: int | None
+    description: str
+    category: str
+    dzongkhag: str
+    location_detail: str | None
+    start_datetime: datetime
+    end_datetime: datetime
+    capacity: int | None
     points_reward: int
-    hours_reward: float
     status: EventStatus
-    created_by: uuid.UUID
+    image_url: str | None
+    organizer_id: uuid.UUID
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
-
-class EventRegistrationResponse(BaseModel):
-    id: uuid.UUID
-    event_id: uuid.UUID
-    user_id: uuid.UUID
-    status: RegistrationStatus
-    registered_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class RegistrationStatusUpdate(BaseModel):
-    status: RegistrationStatus
+class EventDetail(EventPublic):
+    registered_count: int
+    spots_remaining: int | None

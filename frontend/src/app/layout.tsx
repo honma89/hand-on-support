@@ -1,7 +1,22 @@
 import type { Metadata } from "next";
+import { Inter, Montserrat } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/components/providers/query-provider";
-import { Navbar } from "@/components/layout/navbar";
+import { Shell } from "@/components/layout/shell";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+  weight: ["400", "500", "600"],
+});
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+  weight: ["400", "600", "700"],
+});
 
 export const metadata: Metadata = {
   title: "Hand On Support | Volunteer Management, Bhutan",
@@ -13,11 +28,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body className="antialiased min-h-screen">
+    <html lang="en" className={`${inter.variable} ${montserrat.variable}`}>
+      <body className="antialiased min-h-screen bg-background text-foreground">
         <QueryProvider>
-          <Navbar />
-          {children}
+          <Shell>{children}</Shell>
         </QueryProvider>
       </body>
     </html>

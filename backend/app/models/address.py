@@ -2,7 +2,8 @@ import uuid
 from enum import StrEnum
 
 from sqlalchemy import String, Text, Enum, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.mixins import TimestampMixin
 from app.db.session import Base
@@ -48,9 +49,3 @@ class Address(Base, TimestampMixin):
     landmark: Mapped[str | None] = mapped_column(Text)
 
     full_address: Mapped[str | None] = mapped_column(Text)
-
-    volunteer = relationship(
-        "Volunteer",
-        back_populates="address",
-        uselist=False
-    )

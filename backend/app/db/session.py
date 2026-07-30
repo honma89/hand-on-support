@@ -15,7 +15,7 @@ settings = get_settings()
 # pool_pre_ping avoids stale-connection errors after DB restarts/idle periods.
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=settings.DEBUG,
+    echo=False,
     pool_pre_ping=True,
     future=True,
 )
