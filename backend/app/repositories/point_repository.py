@@ -50,3 +50,29 @@ class PointRepository:
         query = query.order_by(func.sum(PointTransaction.amount).desc()).limit(limit)
         result = await self.db.execute(query)
         return [(row.user_id, int(row.total)) for row in result.all()]
+
+    async def get_user_rank(self, user_id: uuid.UUID, since: object | None = None) -> int | None:
+        """1-based leaderboard rank for a single user (None if they have no
+        transactions at all yet). Counts how many other users out-earn them
+        rather than materializing the full ranking, so it stays cheap
+        regardless of how many volunteers are registered."""
+        totals_query = select(
+            PointTransaction.user_id.label("user_id"),
+            func.sum(PointTransaction.amount).label("total"),
+        ).group_by(PointTransaction.user_id)
+        if since is not None:
+            totals_query = totals_query.where(PointTransaction.created_at >= since)
+        totals = totals_query.subquery()
+
+        my_total = (
+            await self.db.execute(select(totals.c.total).where(totals.c.user_id == user_id))
+        ).scalar_one_or_none()
+        if my_total is None:
+            return None
+
+        higher_count = (
+            await self.db.execute(
+                select(func.count()).select_from(totals).where(totals.c.total > my_total)
+            )
+        ).scalar_one()
+        return int(higher_count) + 1

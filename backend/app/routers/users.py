@@ -6,8 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import NotFoundError
 from app.db.session import get_db
 from app.deps import CurrentUser, get_user_repository, require_admin
+from app.repositories.address_repository import AddressRepository
+from app.repositories.attendance_repository import AttendanceRepository
+from app.repositories.badge_repository import BadgeRepository
+from app.repositories.point_repository import PointRepository
 from app.repositories.user_repository import UserRepository
+from app.schemas.impact import MyImpact
+from app.schemas.location import AddressPublic, AddressUpdate
 from app.schemas.user import AdminUserUpdate, UserPublic, UserUpdate
+from app.services.address_service import AddressService
+from app.services.impact_service import ImpactService
 from app.services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -29,6 +37,39 @@ async def update_my_profile(
     updated = await service.update_own_profile(current_user, data)
     await db.commit()
     return updated
+
+
+# NEW: there was previously no way at all to set a volunteer's structured
+# Bhutan address (dzongkhag/gewog) in the live app - the addresses
+# table existed in the DB but nothing wrote to it. User.dzongkhag (a plain
+# string) is still used for quick filtering/display; this is the detailed,
+# normalized version used for precise location lookups.
+@router.put("/me/address", response_model=AddressPublic)
+async def update_my_address(
+    data: AddressUpdate,
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+):
+    service = AddressService(AddressRepository(db))
+    address = await service.set_user_address(current_user, data)
+    await db.commit()
+    return address
+
+
+@router.get("/me/impact", response_model=MyImpact)
+async def get_my_impact(
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+):
+    """One-call summary for a volunteer's own profile/dashboard: events
+    attended, hours volunteered, point balance, badges earned, and current
+    all-time leaderboard rank."""
+    service = ImpactService(
+        attendance_repo=AttendanceRepository(db),
+        point_repo=PointRepository(db),
+        badge_repo=BadgeRepository(db),
+    )
+    return await service.get_my_impact(current_user.id)
 
 
 @router.get("/{user_id}", response_model=UserPublic)
