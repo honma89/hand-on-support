@@ -10,7 +10,7 @@ from app.models.enums import RegistrationStatus
 from app.repositories.event_repository import EventRepository
 from app.repositories.notification_repository import NotificationRepository
 from app.repositories.registration_repository import RegistrationRepository
-from app.schemas.registration import RegistrationPublic, RegistrationWithEvent
+from app.schemas.registration import RegistrationPublic, RegistrationWithEvent, RegistrationWithUser
 from app.services.notification_service import NotificationService
 from app.services.registration_service import RegistrationService
 
@@ -72,7 +72,7 @@ async def list_my_registrations(
     return await service.list_my_registrations(current_user)
 
 
-@router.get("/events/{event_id}/registrations", response_model=list[RegistrationPublic])
+@router.get("/events/{event_id}/registrations", response_model=list[RegistrationWithUser])
 async def list_event_registrations(
     event_id: uuid.UUID,
     current_user: CurrentUser,

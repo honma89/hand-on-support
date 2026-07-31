@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
-import type { EventDetail, EventPublic, EventStatus, RegistrationWithEvent } from "@/lib/types";
+import type {
+  AttendanceStatus,
+  EventDetail,
+  EventPublic,
+  EventStatus,
+  RegistrationWithEvent,
+  RegistrationWithUser,
+} from "@/lib/types";
 
 export interface EventCreateInput {
   title: string;
@@ -64,6 +71,42 @@ export function useCreateEvent() {
       (await apiClient.post<EventPublic>("/events", data)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+    },
+  });
+}
+
+export function useOrganizerEvents(organizerId: string | undefined) {
+  return useQuery({
+    queryKey: ["events", "organizer", organizerId],
+    queryFn: async () =>
+      (
+        await apiClient.get<EventPublic[]>("/events", {
+          params: { organizer_id: organizerId, limit: 100 },
+        })
+      ).data,
+    enabled: !!organizerId,
+  });
+}
+
+export function useEventRegistrations(eventId: string) {
+  return useQuery({
+    queryKey: ["events", eventId, "registrations"],
+    queryFn: async () =>
+      (await apiClient.get<RegistrationWithUser[]>(`/events/${eventId}/registrations`)).data,
+    enabled: !!eventId,
+  });
+}
+
+export function useMarkBulkAttendance(eventId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (records: { user_id: string; status: AttendanceStatus }[]) =>
+      (
+        await apiClient.post(`/events/${eventId}/attendance/bulk`, { records })
+      ).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events", eventId] });
       queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
     },
   });

@@ -36,6 +36,7 @@ class EventRepository:
         category: str | None = None,
         dzongkhag: str | None = None,
         upcoming_only: bool = False,
+        organizer_id: uuid.UUID | None = None,
         offset: int = 0,
         limit: int = 20,
     ) -> list[Event]:
@@ -48,6 +49,8 @@ class EventRepository:
             query = query.where(Event.dzongkhag == dzongkhag)
         if upcoming_only:
             query = query.where(Event.start_datetime >= func.now())
+        if organizer_id:
+            query = query.where(Event.organizer_id == organizer_id)
         query = query.order_by(Event.start_datetime.asc()).offset(offset).limit(limit)
         result = await self.db.execute(query)
         return list(result.scalars().all())

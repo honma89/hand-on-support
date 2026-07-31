@@ -24,6 +24,7 @@ async def list_events(
     category: str | None = None,
     dzongkhag: str | None = None,
     upcoming_only: bool = False,
+    organizer_id: uuid.UUID | None = None,
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
     service: EventService = Depends(get_event_service),
@@ -33,6 +34,7 @@ async def list_events(
         category=category,
         dzongkhag=dzongkhag,
         upcoming_only=upcoming_only,
+        organizer_id=organizer_id,
         offset=offset,
         limit=limit,
     )

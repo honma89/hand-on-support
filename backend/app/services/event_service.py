@@ -26,6 +26,7 @@ class EventService:
         category: str | None = None,
         dzongkhag: str | None = None,
         upcoming_only: bool = False,
+        organizer_id: uuid.UUID | None = None,
         offset: int = 0,
         limit: int = 20,
     ) -> list[Event]:
@@ -34,6 +35,7 @@ class EventService:
             category=category,
             dzongkhag=dzongkhag,
             upcoming_only=upcoming_only,
+            organizer_id=organizer_id,
             offset=offset,
             limit=limit,
         )

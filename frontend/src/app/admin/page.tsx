@@ -16,6 +16,12 @@ const quickActions = [
     description: "Add a new badge to the Point Bank",
     icon: "military_tech",
   },
+  {
+    href: "/admin/users",
+    label: "Manage Users",
+    description: "Change roles and activate/deactivate accounts",
+    icon: "manage_accounts",
+  },
 ];
 
 const statCards = [

@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.enums import RegistrationStatus
 from app.models.event_registration import EventRegistration
@@ -47,7 +48,11 @@ class RegistrationRepository:
     async def list_for_event(
         self, event_id: uuid.UUID, status: RegistrationStatus | None = None
     ) -> list[EventRegistration]:
-        query = select(EventRegistration).where(EventRegistration.event_id == event_id)
+        query = (
+            select(EventRegistration)
+            .options(selectinload(EventRegistration.user))
+            .where(EventRegistration.event_id == event_id)
+        )
         if status:
             query = query.where(EventRegistration.status == status)
         result = await self.db.execute(query.order_by(EventRegistration.created_at.asc()))

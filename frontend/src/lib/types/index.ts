@@ -49,6 +49,26 @@ export interface RegistrationWithEvent {
   event: EventPublic;
 }
 
+export interface RegistrationWithUser {
+  id: string;
+  event_id: string;
+  user_id: string;
+  status: RegistrationStatus;
+  created_at: string;
+  user: User;
+}
+
+export type AttendanceStatus = "present" | "absent";
+
+export interface AttendancePublic {
+  id: string;
+  event_id: string;
+  user_id: string;
+  status: AttendanceStatus;
+  marked_at: string;
+  points_awarded: boolean;
+}
+
 export interface PointBalance {
   user_id: string;
   balance: number;

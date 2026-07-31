@@ -59,6 +59,21 @@ export function SideNav() {
           Admin
         </Link>
       )}
+
+      {user?.role === "organizer" && (
+        <Link
+          href="/organizer"
+          className={cn(
+            "flex items-center gap-sm px-sm py-sm rounded-xl font-label-md text-label-md transition-colors mt-md pt-md border-t border-outline-variant",
+            pathname.startsWith("/organizer")
+              ? "bg-primary-container text-on-primary-container"
+              : "text-on-surface-variant hover:bg-surface-container",
+          )}
+        >
+          <span className="material-symbols-outlined text-xl">event_available</span>
+          My Events
+        </Link>
+      )}
     </aside>
   );
 }

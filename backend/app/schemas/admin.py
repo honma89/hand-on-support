@@ -1,8 +1,4 @@
-import uuid
-
 from pydantic import BaseModel
-
-from app.models.enums import UserRole
 
 
 class DashboardStats(BaseModel):
@@ -16,8 +12,3 @@ class DashboardStats(BaseModel):
     total_attendance_present: int
     total_points_awarded: int
     total_badges_awarded: int
-
-
-class RoleAssign(BaseModel):
-    user_id: uuid.UUID
-    role: UserRole
