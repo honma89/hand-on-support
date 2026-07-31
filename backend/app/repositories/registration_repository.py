@@ -40,6 +40,7 @@ class RegistrationRepository:
     async def list_for_user(self, user_id: uuid.UUID) -> list[EventRegistration]:
         result = await self.db.execute(
             select(EventRegistration)
+            .options(selectinload(EventRegistration.event))
             .where(EventRegistration.user_id == user_id)
             .order_by(EventRegistration.created_at.desc())
         )

@@ -26,49 +26,47 @@ export default function LoginPage() {
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Welcome back</CardTitle>
-          <CardDescription>Log in to Hand On Support to continue volunteering.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            className="space-y-4"
-            onSubmit={handleSubmit((data) => login.mutate(data))}
-          >
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" {...register("email")} />
-              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" {...register("password")} />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
-            </div>
-
-            {login.isError && (
-              <p className="text-sm text-destructive">
-                Invalid email or password. Please try again.
-              </p>
+    <Card className="w-full max-w-sm">
+      <CardHeader>
+        <CardTitle>Welcome back</CardTitle>
+        <CardDescription>Log in to Hand On Support to continue volunteering.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="space-y-4"
+          onSubmit={handleSubmit((data) => login.mutate(data))}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" placeholder="you@example.com" {...register("email")} />
+            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input id="password" type="password" {...register("password")} />
+            {errors.password && (
+              <p className="text-sm text-destructive">{errors.password.message}</p>
             )}
+          </div>
 
-            <Button type="submit" className="w-full" disabled={login.isPending}>
-              {login.isPending ? "Logging in…" : "Log in"}
-            </Button>
-          </form>
+          {login.isError && (
+            <p className="text-sm text-destructive">
+              Invalid email or password. Please try again.
+            </p>
+          )}
 
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-primary underline-offset-4 hover:underline">
-              Sign up
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </main>
+          <Button type="submit" className="w-full" disabled={login.isPending}>
+            {login.isPending ? "Logging in…" : "Log in"}
+          </Button>
+        </form>
+
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          Don&apos;t have an account?{" "}
+          <Link href="/register" className="text-primary underline-offset-4 hover:underline">
+            Sign up
+          </Link>
+        </p>
+      </CardContent>
+    </Card>
   );
 }

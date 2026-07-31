@@ -90,9 +90,9 @@ export default function RegisterPage() {
 
   return (
     <div className="bg-surface-container-lowest rounded-xl shadow-ambient max-w-2xl w-full p-md md:p-lg border border-outline-variant">
-      <div className="text-center mb-lg">
-        <span className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-container text-on-primary-container mb-md">
-          <span className="material-symbols-outlined text-3xl">volunteer_activism</span>
+      <div className="text-center mb-md">
+        <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-container text-on-primary-container mb-sm">
+          <span className="material-symbols-outlined text-2xl">volunteer_activism</span>
         </span>
         <h1 className="font-display-lg text-headline-lg text-on-surface mb-base">
           Join the Movement
@@ -103,7 +103,7 @@ export default function RegisterPage() {
       </div>
 
       {/* Progress indicator */}
-      <div className="flex items-center justify-center gap-xs mb-lg">
+      <div className="flex items-center justify-center gap-xs mb-md">
         {steps.map((s, i) => (
           <div key={s.key} className="flex items-center gap-xs">
             <div
