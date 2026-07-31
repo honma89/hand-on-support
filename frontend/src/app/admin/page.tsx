@@ -5,15 +5,15 @@ import { useAdminDashboard } from "@/lib/hooks/use-rewards";
 
 const quickActions = [
   {
-    href: "/admin/events/new",
-    label: "Create Event",
-    description: "Publish a new volunteer event",
-    icon: "add_circle",
+    href: "/admin/events",
+    label: "Manage Events",
+    description: "View, publish, and manage all events",
+    icon: "event",
   },
   {
-    href: "/admin/badges/new",
-    label: "Create Badge",
-    description: "Add a new badge to the Point Bank",
+    href: "/admin/badges",
+    label: "Manage Badges",
+    description: "View badge templates and create new ones",
     icon: "military_tech",
   },
   {

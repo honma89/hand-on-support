@@ -85,7 +85,7 @@ export default function NewEventPage() {
       status: data.status,
       image_url: data.image_url || undefined,
     });
-    router.push("/admin");
+    router.push("/admin/events");
   });
 
   const serverError = isAxiosError(createEvent.error)
@@ -198,6 +198,10 @@ export default function NewEventPage() {
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
               </Select>
+              <p className="text-xs text-on-surface-variant">
+                Draft events aren&apos;t visible to volunteers. Choose Published (or publish it
+                later from Manage Events) once it&apos;s ready.
+              </p>
             </div>
           </div>
 

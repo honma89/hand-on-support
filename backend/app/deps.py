@@ -60,6 +60,45 @@ async def get_current_user(
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
+async def get_current_user_optional(
+    access_token_cookie: str | None = Cookie(default=None, alias="access_token"),
+    authorization: str | None = Header(default=None),
+    user_repo: UserRepository = Depends(get_user_repository),
+) -> User | None:
+    """
+    Like get_current_user, but returns None instead of raising when no
+    valid session is present. For endpoints that are public but need to
+    behave differently for logged-in users (e.g. an events list that
+    shows drafts to their organizer but not to anonymous visitors).
+    """
+    token = access_token_cookie
+    if not token and authorization and authorization.lower().startswith("bearer "):
+        token = authorization[7:]
+    if not token:
+        return None
+
+    payload = decode_token(token)
+    if not payload or payload.get("type") != TokenType.ACCESS.value:
+        return None
+
+    user_id = payload.get("sub")
+    if not user_id:
+        return None
+
+    try:
+        user = await user_repo.get_by_id(uuid.UUID(user_id))
+    except ValueError:
+        return None
+
+    if not user or not user.is_active:
+        return None
+
+    return user
+
+
+CurrentUserOptional = Annotated[User | None, Depends(get_current_user_optional)]
+
+
 def require_roles(*allowed_roles: UserRole):
     """
     Dependency factory for role-based authorization, e.g.:

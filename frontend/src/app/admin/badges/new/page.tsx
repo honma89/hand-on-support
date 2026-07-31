@@ -45,7 +45,7 @@ export default function NewBadgePage() {
 
   const onSubmit = handleSubmit(async (data) => {
     await createBadge.mutateAsync(data);
-    router.push("/admin");
+    router.push("/admin/badges");
   });
 
   const serverError = isAxiosError(createBadge.error)

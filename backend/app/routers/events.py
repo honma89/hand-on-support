@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.db.session import get_db
-from app.deps import CurrentUser, require_organizer_or_admin
-from app.models.enums import EventStatus
+from app.deps import CurrentUser, CurrentUserOptional, require_organizer_or_admin
+from app.models.enums import EventStatus, UserRole
 from app.repositories.event_repository import EventRepository
 from app.schemas.event import EventCreate, EventDetail, EventPublic, EventUpdate
 from app.services.event_service import EventService
@@ -20,6 +20,7 @@ def get_event_service(db: AsyncSession = Depends(get_db)) -> EventService:
 
 @router.get("", response_model=list[EventPublic])
 async def list_events(
+    current_user: CurrentUserOptional,
     status_filter: EventStatus | None = Query(default=None, alias="status"),
     category: str | None = None,
     dzongkhag: str | None = None,
@@ -29,6 +30,21 @@ async def list_events(
     limit: int = Query(default=20, ge=1, le=100),
     service: EventService = Depends(get_event_service),
 ):
+    # Draft/cancelled events are only visible to their own organizer or an
+    # admin. Anonymous visitors and volunteers always get published-only,
+    # regardless of what status filter they ask for -- otherwise anyone
+    # could see unpublished events by omitting/forging the status param.
+    is_admin = current_user is not None and current_user.role == UserRole.ADMIN
+    is_owning_organizer = (
+        current_user is not None
+        and current_user.role == UserRole.ORGANIZER
+        and organizer_id is not None
+        and organizer_id == current_user.id
+    )
+
+    if not (is_admin or is_owning_organizer):
+        status_filter = EventStatus.PUBLISHED
+
     return await service.list_events(
         status=status_filter,
         category=category,

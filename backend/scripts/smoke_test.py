@@ -13,7 +13,6 @@ import httpx
 
 from app.main import app
 
-
 async def main():
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
@@ -157,7 +156,6 @@ async def main():
         print("✓ Analytics events by category:", r.json())
 
         print("\nALL SMOKE TESTS PASSED")
-
 
 if __name__ == "__main__":
     asyncio.run(main())

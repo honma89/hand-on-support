@@ -76,6 +76,30 @@ export function useCreateEvent() {
   });
 }
 
+export function useUpdateEvent(eventId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Partial<EventCreateInput>) =>
+      (await apiClient.patch<EventPublic>(`/events/${eventId}`, data)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+    },
+  });
+}
+
+export function useAllEventsAdmin() {
+  return useQuery({
+    queryKey: ["events", "admin", "all"],
+    queryFn: async () =>
+      (
+        await apiClient.get<EventPublic[]>("/events", {
+          params: { limit: 100 },
+        })
+      ).data,
+  });
+}
+
 export function useOrganizerEvents(organizerId: string | undefined) {
   return useQuery({
     queryKey: ["events", "organizer", organizerId],
