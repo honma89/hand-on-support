@@ -8,13 +8,21 @@ from app.core.config import get_settings
 from app.routers import (
     admin,
     analytics,
+    announcements,
     attendance,
     auth,
     badges,
+    departments,
+    documents,
+    donations,
     events,
+    home,
     leaderboard,
+    locations,
+    media,
     notifications,
     point_bank,
+    recognitions,
     registrations,
     uploads,
     users,
@@ -40,6 +48,7 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router, prefix=settings.API_V1_PREFIX)
+app.include_router(home.router, prefix=settings.API_V1_PREFIX)
 app.include_router(events.router, prefix=settings.API_V1_PREFIX)
 app.include_router(registrations.router, prefix=settings.API_V1_PREFIX)
 app.include_router(attendance.router, prefix=settings.API_V1_PREFIX)
@@ -59,6 +68,19 @@ app.include_router(uploads.router, prefix=settings.API_V1_PREFIX)
 _upload_root = Path(settings.UPLOAD_ROOT)
 _upload_root.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(_upload_root)), name="uploads")
+
+# NEW: these tables already existed in the DB (via the f3a91c7b2e4d
+# migration) but had no live endpoints anywhere - the routers below were
+# either missing entirely (locations) or written against the old sync
+# stack and never wired in (the other five). Rebuilt against the current
+# async/repository stack - see ARCHIVED_LEGACY_CODE.md.
+app.include_router(locations.router, prefix=settings.API_V1_PREFIX)
+app.include_router(departments.router, prefix=settings.API_V1_PREFIX)
+app.include_router(media.router, prefix=settings.API_V1_PREFIX)
+app.include_router(documents.router, prefix=settings.API_V1_PREFIX)
+app.include_router(announcements.router, prefix=settings.API_V1_PREFIX)
+app.include_router(donations.router, prefix=settings.API_V1_PREFIX)
+app.include_router(recognitions.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/api/health", tags=["health"])

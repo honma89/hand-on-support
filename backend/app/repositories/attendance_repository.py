@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.attendance import Attendance
 from app.models.enums import AttendanceStatus
+from app.models.event import Event
 
 
 class AttendanceRepository:
@@ -48,3 +49,23 @@ class AttendanceRepository:
             )
         )
         return int(result.scalar_one())
+
+    @staticmethod
+    def _hours_query():
+        """Sum of event duration (in seconds) for PRESENT attendance rows,
+        via extract(epoch from interval) - callers convert to hours."""
+        return (
+            select(func.coalesce(func.sum(func.extract("epoch", Event.end_datetime - Event.start_datetime)), 0))
+            .select_from(Attendance)
+            .join(Event, Event.id == Attendance.event_id)
+            .where(Attendance.status == AttendanceStatus.PRESENT)
+        )
+
+    async def sum_hours_for_user(self, user_id: uuid.UUID) -> float:
+        query = self._hours_query().where(Attendance.user_id == user_id)
+        result = await self.db.execute(query)
+        return round(float(result.scalar_one()) / 3600, 1)
+
+    async def sum_hours_all(self) -> float:
+        result = await self.db.execute(self._hours_query())
+        return round(float(result.scalar_one()) / 3600, 1)
