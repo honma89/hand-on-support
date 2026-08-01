@@ -37,40 +37,85 @@ class EventRepository:
         dzongkhag: str | None = None,
         upcoming_only: bool = False,
         organizer_id: uuid.UUID | None = None,
-        visible_to_owner_id: uuid.UUID | None = None,
+        q: str | None = None,
+        sort_by: str = "soonest",
         offset: int = 0,
         limit: int = 20,
     ) -> list[Event]:
         query = select(Event)
-
-        if organizer_id:
-            # Scoped to exactly one organizer's events (any status) --
-            # used for an organizer's own "My Events" list, or an admin
-            # filtering the admin list down to a specific organizer.
-            query = query.where(Event.organizer_id == organizer_id)
-        elif visible_to_owner_id:
-            # An organizer's default "coordination" view: every published
-            # event from any organizer, PLUS their own events regardless
-            # of status (their drafts/cancelled remain visible to them).
-            # If a status filter was also requested, it narrows the
-            # "anyone's events" branch; their own events stay visible
-            # either way.
-            published_branch = Event.status == (status or EventStatus.PUBLISHED)
-            own_branch = Event.organizer_id == visible_to_owner_id
-            query = query.where(or_(published_branch, own_branch))
-        elif status:
+        if status:
             query = query.where(Event.status == status)
-
         if category:
             query = query.where(Event.category == category)
         if dzongkhag:
             query = query.where(Event.dzongkhag == dzongkhag)
         if upcoming_only:
             query = query.where(Event.start_datetime >= func.now())
+        if organizer_id:
+            query = query.where(Event.organizer_id == organizer_id)
+        if q:
+            like = f"%{q}%"
+            query = query.where(
+                or_(
+                    Event.title.ilike(like),
+                    Event.description.ilike(like),
+                    Event.category.ilike(like),
+                )
+            )
 
-        query = query.order_by(Event.start_datetime.asc()).offset(offset).limit(limit)
+        if sort_by == "popular":
+            registered_count = (
+                select(func.count())
+                .select_from(EventRegistration)
+                .where(
+                    EventRegistration.event_id == Event.id,
+                    EventRegistration.status == RegistrationStatus.REGISTERED,
+                )
+                .correlate(Event)
+                .scalar_subquery()
+            )
+            query = query.order_by(registered_count.desc(), Event.start_datetime.asc())
+        elif sort_by == "newest":
+            query = query.order_by(Event.created_at.desc())
+        else:  # "soonest" (default)
+            query = query.order_by(Event.start_datetime.asc())
+
+        query = query.offset(offset).limit(limit)
         result = await self.db.execute(query)
         return list(result.scalars().all())
+
+    async def list_similar(self, event: Event, limit: int = 5) -> list[Event]:
+        """Other upcoming, published events in the same category - falls
+        back to the same dzongkhag if nothing else matches the category."""
+        base_query = select(Event).where(
+            Event.id != event.id,
+            Event.status == EventStatus.PUBLISHED,
+            Event.start_datetime >= func.now(),
+        )
+
+        by_category = await self.db.execute(
+            base_query.where(Event.category == event.category)
+            .order_by(Event.start_datetime.asc())
+            .limit(limit)
+        )
+        matches = list(by_category.scalars().all())
+        if len(matches) >= limit:
+            return matches
+
+        seen_ids = {e.id for e in matches}
+        by_location = await self.db.execute(
+            base_query.where(Event.dzongkhag == event.dzongkhag)
+            .order_by(Event.start_datetime.asc())
+            .limit(limit)
+        )
+        for e in by_location.scalars().all():
+            if e.id not in seen_ids:
+                matches.append(e)
+                seen_ids.add(e.id)
+            if len(matches) >= limit:
+                break
+
+        return matches[:limit]
 
     async def count_active_registrations(self, event_id: uuid.UUID) -> int:
         query = select(func.count()).select_from(EventRegistration).where(
