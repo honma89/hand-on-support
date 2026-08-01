@@ -3,6 +3,7 @@ import { Inter, Montserrat } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Shell } from "@/components/layout/shell";
+import { UnauthorizedBanner } from "@/components/layout/unauthorized-banner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -37,7 +38,10 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen bg-background text-foreground">
         <QueryProvider>
-          <Shell>{children}</Shell>
+          <Shell>
+            <UnauthorizedBanner />
+            {children}
+          </Shell>
         </QueryProvider>
       </body>
     </html>

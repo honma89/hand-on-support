@@ -20,3 +20,7 @@ npm-debug.log*
 # --- Docker ---
 *.log
 .env
+
+# Locally-stored uploaded files (see backend/app/core/config.py UPLOAD_ROOT)
+backend/uploads/*
+!backend/uploads/.gitkeep

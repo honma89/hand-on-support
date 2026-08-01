@@ -100,6 +100,24 @@ export function useAllEventsAdmin() {
   });
 }
 
+export function useUploadEventImage() {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      // IMPORTANT: don't set Content-Type here. The instance default sets
+      // it to application/json, but a multipart request needs a boundary
+      // parameter that only the browser can generate -- setting `undefined`
+      // lets axios delete the default and let the browser fill it in
+      // correctly (e.g. "multipart/form-data; boundary=----WebKit...").
+      const response = await apiClient.post<{ url: string }>("/uploads/event-image", formData, {
+        headers: { "Content-Type": undefined },
+      });
+      return response.data.url;
+    },
+  });
+}
+
 export function useOrganizerEvents(organizerId: string | undefined) {
   return useQuery({
     queryKey: ["events", "organizer", organizerId],
@@ -110,6 +128,18 @@ export function useOrganizerEvents(organizerId: string | undefined) {
         })
       ).data,
     enabled: !!organizerId,
+  });
+}
+
+export function useCoordinationEvents() {
+  return useQuery({
+    queryKey: ["events", "coordination"],
+    queryFn: async () =>
+      // No organizer_id param -- for a logged-in organizer, the backend
+      // returns published events from every organizer PLUS their own
+      // drafts/cancelled (never another organizer's drafts). For an
+      // admin, this returns everything unrestricted.
+      (await apiClient.get<EventPublic[]>("/events", { params: { limit: 100 } })).data,
   });
 }
 

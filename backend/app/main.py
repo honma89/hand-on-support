@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import get_settings
 from app.routers import (
@@ -13,6 +16,7 @@ from app.routers import (
     notifications,
     point_bank,
     registrations,
+    uploads,
     users,
 )
 
@@ -45,6 +49,16 @@ app.include_router(point_bank.router, prefix=settings.API_V1_PREFIX)
 app.include_router(notifications.router, prefix=settings.API_V1_PREFIX)
 app.include_router(admin.router, prefix=settings.API_V1_PREFIX)
 app.include_router(analytics.router, prefix=settings.API_V1_PREFIX)
+app.include_router(uploads.router, prefix=settings.API_V1_PREFIX)
+
+# Serve uploaded files directly. In docker-compose this directory is a
+# mounted volume so files survive container rebuilts; see UPLOAD_ROOT in
+# core/config.py. NOT suitable for a multi-instance/production deploy as-is
+# (each instance would have its own local disk) -- swap FileStorageRepository
+# for S3/GCS before scaling horizontally.
+_upload_root = Path(settings.UPLOAD_ROOT)
+_upload_root.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(_upload_root)), name="uploads")
 
 
 @app.get("/api/health", tags=["health"])

@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.enums import EventStatus, RegistrationStatus
@@ -37,20 +37,37 @@ class EventRepository:
         dzongkhag: str | None = None,
         upcoming_only: bool = False,
         organizer_id: uuid.UUID | None = None,
+        visible_to_owner_id: uuid.UUID | None = None,
         offset: int = 0,
         limit: int = 20,
     ) -> list[Event]:
         query = select(Event)
-        if status:
+
+        if organizer_id:
+            # Scoped to exactly one organizer's events (any status) --
+            # used for an organizer's own "My Events" list, or an admin
+            # filtering the admin list down to a specific organizer.
+            query = query.where(Event.organizer_id == organizer_id)
+        elif visible_to_owner_id:
+            # An organizer's default "coordination" view: every published
+            # event from any organizer, PLUS their own events regardless
+            # of status (their drafts/cancelled remain visible to them).
+            # If a status filter was also requested, it narrows the
+            # "anyone's events" branch; their own events stay visible
+            # either way.
+            published_branch = Event.status == (status or EventStatus.PUBLISHED)
+            own_branch = Event.organizer_id == visible_to_owner_id
+            query = query.where(or_(published_branch, own_branch))
+        elif status:
             query = query.where(Event.status == status)
+
         if category:
             query = query.where(Event.category == category)
         if dzongkhag:
             query = query.where(Event.dzongkhag == dzongkhag)
         if upcoming_only:
             query = query.where(Event.start_datetime >= func.now())
-        if organizer_id:
-            query = query.where(Event.organizer_id == organizer_id)
+
         query = query.order_by(Event.start_datetime.asc()).offset(offset).limit(limit)
         result = await self.db.execute(query)
         return list(result.scalars().all())

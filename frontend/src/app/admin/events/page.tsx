@@ -125,7 +125,7 @@ export default function AdminEventsPage() {
             </p>
           </div>
           <Link
-            href="/admin/events/new"
+            href="/organizer/events/new"
             className="btn-primary rounded-full px-md py-sm inline-flex items-center gap-xs"
           >
             <span className="material-symbols-outlined text-lg">add_circle</span>

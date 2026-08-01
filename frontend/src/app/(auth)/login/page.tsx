@@ -1,6 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -18,7 +20,17 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const login = useLogin();
+  return (
+    <Suspense fallback={null}>
+      <LoginFormFields />
+    </Suspense>
+  );
+}
+
+function LoginFormFields() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") ?? undefined;
+  const login = useLogin(redirectTo);
   const {
     register,
     handleSubmit,
@@ -32,6 +44,11 @@ export default function LoginPage() {
         <CardDescription>Log in to Hand On Support to continue volunteering.</CardDescription>
       </CardHeader>
       <CardContent>
+        {redirectTo && (
+          <p className="mb-4 rounded-md bg-secondary/50 px-3 py-2 text-sm text-secondary-foreground">
+            Log in to continue to that page.
+          </p>
+        )}
         <form
           className="space-y-4"
           onSubmit={handleSubmit((data) => login.mutate(data))}

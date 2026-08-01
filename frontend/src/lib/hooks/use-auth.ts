@@ -16,7 +16,7 @@ export function useCurrentUser() {
   });
 }
 
-export function useLogin() {
+export function useLogin(redirectTo?: string) {
   const queryClient = useQueryClient();
   const router = useRouter();
   return useMutation({
@@ -24,7 +24,8 @@ export function useLogin() {
       (await apiClient.post<AuthResponse>("/auth/login", data)).data,
     onSuccess: (data) => {
       queryClient.setQueryData(["auth", "me"], data.user);
-      router.push("/dashboard");
+      const isSafeInternalPath = !!redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//");
+      router.push(isSafeInternalPath ? redirectTo : "/dashboard");
     },
   });
 }

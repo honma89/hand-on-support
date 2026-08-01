@@ -45,6 +45,12 @@ FastAPI. Every backend module follows `router -> service -> repository -> model`
 cp backend/.env.example backend/.env
 # edit backend/.env and set a real JWT_SECRET_KEY
 
+cp frontend/.env.local.example frontend/.env.local
+# edit frontend/.env.local and set JWT_SECRET_KEY to the EXACT SAME value
+# as backend/.env -- middleware.ts uses this to verify the auth cookie
+# for route guarding (login/role redirects). If these two values don't
+# match, every authenticated page will redirect to /login.
+
 docker compose up --build
 ```
 

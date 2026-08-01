@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     # --- CORS ---
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost"]
 
+    # --- File uploads (local disk for now; see FileStorageRepository for
+    #     the swap point when this needs to move to cloud storage) ---
+    UPLOAD_ROOT: str = "uploads"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
