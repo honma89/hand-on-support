@@ -14,22 +14,12 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateEvent, useUploadEventImage } from "@/lib/hooks/use-events";
 import { useCurrentUser } from "@/lib/hooks/use-auth";
+import { DZONGKHAGS } from "@/lib/constants/bhutan";
 
-const dzongkhags = [
-  "Thimphu",
-  "Paro",
-  "Punakha",
-  "Wangdue Phodrang",
-  "Bumthang",
-  "Trongsa",
-  "Mongar",
-  "Trashigang",
-  "Samdrup Jongkhar",
-  "Chukha",
-  "Haa",
-  "Gasa",
-  "Other",
-];
+// All 20 dzongkhags, plus "Other" for the rare event that doesn't map
+// cleanly to one (e.g. multi-district or virtual). Sourced from the
+// shared constants file so this always matches the events filter bar.
+const dzongkhags = [...DZONGKHAGS, "Other"];
 
 const eventSchema = z
   .object({

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Montserrat } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { Toaster } from "@/components/providers/toast-provider";
 import { Shell } from "@/components/layout/shell";
 import { UnauthorizedBanner } from "@/components/layout/unauthorized-banner";
 
@@ -42,6 +43,10 @@ export default function RootLayout({
             <UnauthorizedBanner />
             {children}
           </Shell>
+          {/* Global toast outlet — any component can call `toast()` and it
+              renders here. Mounted inside QueryProvider so mutation
+              callbacks can fire toasts freely. */}
+          <Toaster />
         </QueryProvider>
       </body>
     </html>
