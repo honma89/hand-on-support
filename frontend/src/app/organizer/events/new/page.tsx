@@ -52,7 +52,16 @@ const eventSchema = z
       z.number().int().min(0, "Points reward cannot be negative"),
     ),
     status: z.enum(["draft", "published"]),
-    image_url: z.union([z.string().url("Enter a valid URL"), z.literal("")]).optional(),
+    // Accepts either a full URL (from the "paste an image URL" field) or a
+    // relative path like "/uploads/events/<uuid>.jpg" (from the file
+    // upload, which is served from local disk and has no host/protocol).
+    image_url: z
+      .union([
+        z.string().url("Enter a valid URL"),
+        z.string().regex(/^\/[^\s]+$/, "Enter a valid URL"),
+        z.literal(""),
+      ])
+      .optional(),
   })
   .refine((data) => new Date(data.end_datetime) > new Date(data.start_datetime), {
     message: "End date/time must be after the start date/time",

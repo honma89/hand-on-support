@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { isAxiosError } from "axios";
 import { useCurrentUser } from "@/lib/hooks/use-auth";
-import { useCoordinationEvents } from "@/lib/hooks/use-events";
-import type { EventStatus } from "@/lib/types";
+import { useCoordinationEvents, useUpdateEvent } from "@/lib/hooks/use-events";
+import type { EventPublic, EventStatus } from "@/lib/types";
 
 const STATUS_STYLES: Record<EventStatus, string> = {
   draft: "bg-outline-variant/40 text-on-surface-variant",
@@ -11,6 +13,64 @@ const STATUS_STYLES: Record<EventStatus, string> = {
   cancelled: "bg-error/10 text-error",
   completed: "bg-secondary-container text-secondary",
 };
+
+// Organizers can publish/unpublish/cancel their own events, same as
+// admins can -- the backend already allows this (an organizer manages
+// any event where event.organizer_id === their own id), this just
+// surfaces the controls here too.
+function MyEventStatusControls({ event }: { event: EventPublic }) {
+  const updateEvent = useUpdateEvent(event.id);
+  const [error, setError] = useState<string | null>(null);
+
+  const setStatus = async (status: EventStatus) => {
+    setError(null);
+    try {
+      await updateEvent.mutateAsync({ status });
+    } catch (err) {
+      setError(
+        isAxiosError(err)
+          ? (err.response?.data?.detail as string | undefined) ?? "Could not update the event."
+          : "Could not update the event.",
+      );
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-xs flex-wrap">
+      {event.status === "draft" && (
+        <button
+          onClick={() => setStatus("published")}
+          disabled={updateEvent.isPending}
+          className="btn-primary rounded-full px-md py-sm inline-flex items-center gap-xs text-sm"
+        >
+          <span className="material-symbols-outlined text-lg">publish</span>
+          Publish
+        </button>
+      )}
+      {event.status === "published" && (
+        <button
+          onClick={() => setStatus("draft")}
+          disabled={updateEvent.isPending}
+          className="btn-secondary rounded-full px-md py-sm inline-flex items-center gap-xs text-sm"
+        >
+          <span className="material-symbols-outlined text-lg">unpublished</span>
+          Unpublish
+        </button>
+      )}
+      {(event.status === "draft" || event.status === "published") && (
+        <button
+          onClick={() => setStatus("cancelled")}
+          disabled={updateEvent.isPending}
+          className="rounded-full px-md py-sm inline-flex items-center gap-xs text-sm text-error hover:bg-error/10 transition-colors"
+        >
+          <span className="material-symbols-outlined text-lg">cancel</span>
+          Cancel
+        </button>
+      )}
+      {error && <p className="text-sm text-error basis-full">{error}</p>}
+    </div>
+  );
+}
 
 export default function OrganizerDashboardPage() {
   const { data: user } = useCurrentUser();
@@ -79,15 +139,18 @@ export default function OrganizerDashboardPage() {
                 </div>
                 {/* Manage controls only ever render here, inside "My Events" --
                     events in "Published by other organizers" below never get
-                    this button, since this section is filtered to
+                    these controls, since this section is filtered to
                     event.organizer_id === user.id. */}
-                <Link
-                  href={`/organizer/events/${event.id}/attendance`}
-                  className="btn-secondary rounded-full px-md py-sm inline-flex items-center gap-xs shrink-0"
-                >
-                  <span className="material-symbols-outlined text-lg">how_to_reg</span>
-                  Manage attendance
-                </Link>
+                <div className="flex items-center gap-xs flex-wrap shrink-0">
+                  <MyEventStatusControls event={event} />
+                  <Link
+                    href={`/organizer/events/${event.id}/attendance`}
+                    className="btn-secondary rounded-full px-md py-sm inline-flex items-center gap-xs shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-lg">how_to_reg</span>
+                    Manage attendance
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
