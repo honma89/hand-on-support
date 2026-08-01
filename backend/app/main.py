@@ -8,25 +8,23 @@ from app.core.config import get_settings
 from app.routers import (
     admin,
     analytics,
-    announcements,
     attendance,
     auth,
     badges,
-    departments,
-    documents,
-    donations,
     events,
     home,
     leaderboard,
     locations,
-    media,
     notifications,
     point_bank,
-    recognitions,
     registrations,
     uploads,
     users,
 )
+# NOTE (disabled): announcements, departments, documents, donations,
+# media, recognitions -- see the comment further below, these still
+# crash on import (broken legacy sync DB/auth stack). `locations` was
+# fixed and re-enabled below.
 
 settings = get_settings()
 
@@ -69,18 +67,25 @@ _upload_root = Path(settings.UPLOAD_ROOT)
 _upload_root.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(_upload_root)), name="uploads")
 
-# NEW: these tables already existed in the DB (via the f3a91c7b2e4d
-# migration) but had no live endpoints anywhere - the routers below were
-# either missing entirely (locations) or written against the old sync
-# stack and never wired in (the other five). Rebuilt against the current
-# async/repository stack - see ARCHIVED_LEGACY_CODE.md.
+# NOTE (disabled): these 7 routers are NOT actually on the async stack
+# despite the comment that used to sit here. Every one of them still
+# imports `app.database.session` (a synchronous SQLAlchemy engine built
+# with `create_engine(DATABASE_URL)` against a `postgresql+asyncpg://`
+# URL -- asyncpg has no sync driver, and psycopg2 isn't even in
+# requirements.txt) and `app.core.dependencies` (a separate auth layer
+# requiring SECRET_KEY/ALGORITHM env vars that don't exist in
+# .env.example). Importing any of them crashes the app at startup.
+# Commented out so the rest of the app actually boots; see the
+# continuation prompt for porting these properly onto app.db.session /
+# app.deps before re-enabling.
+# app.include_router(locations.router, prefix=settings.API_V1_PREFIX)
+# app.include_router(departments.router, prefix=settings.API_V1_PREFIX)
+# app.include_router(media.router, prefix=settings.API_V1_PREFIX)
+# app.include_router(documents.router, prefix=settings.API_V1_PREFIX)
+# app.include_router(announcements.router, prefix=settings.API_V1_PREFIX)
+# app.include_router(donations.router, prefix=settings.API_V1_PREFIX)
+# app.include_router(recognitions.router, prefix=settings.API_V1_PREFIX)
 app.include_router(locations.router, prefix=settings.API_V1_PREFIX)
-app.include_router(departments.router, prefix=settings.API_V1_PREFIX)
-app.include_router(media.router, prefix=settings.API_V1_PREFIX)
-app.include_router(documents.router, prefix=settings.API_V1_PREFIX)
-app.include_router(announcements.router, prefix=settings.API_V1_PREFIX)
-app.include_router(donations.router, prefix=settings.API_V1_PREFIX)
-app.include_router(recognitions.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/api/health", tags=["health"])

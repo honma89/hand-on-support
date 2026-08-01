@@ -1,36 +1,23 @@
-from sqlalchemy.orm import Session
-
 from app.models.address import Address
-from app.models.volunteer import Volunteer
-from app.schemas.address import AddressCreate
+from app.models.user import User
+from app.repositories.address_repository import AddressRepository
+from app.schemas.location import AddressUpdate
 
 
-def set_volunteer_address(
-    db: Session,
-    volunteer: Volunteer,
-    data: AddressCreate
-):
-    if volunteer.address_id:
-        address = db.query(Address).filter(
-            Address.id == volunteer.address_id
-        ).first()
-    else:
-        address = Address()
+class AddressService:
+    def __init__(self, address_repo: AddressRepository):
+        self.address_repo = address_repo
 
-    address.address_type = data.address_type
-    address.dzongkhag_id = data.dzongkhag_id
-    address.dungkhag_id = data.dungkhag_id
-    address.gewog_id = data.gewog_id
-    address.village = data.village
-    address.full_address = data.additional_details
+    async def set_user_address(self, user: User, data: AddressUpdate) -> Address:
+        address = await self.address_repo.get_by_id(user.address_id) if user.address_id else None
 
-    db.add(address)
-    db.commit()
-    db.refresh(address)
+        if address is None:
+            address = Address(address_type=data.address_type)
 
-    volunteer.address_id = address.id
-    db.add(volunteer)
-    db.commit()
-    db.refresh(volunteer)
+        for field, value in data.model_dump(exclude_unset=True, exclude={"address_type"}).items():
+            setattr(address, field, value)
+        address.address_type = data.address_type
 
-    return address
+        address = await self.address_repo.create(address)
+        user.address_id = address.id
+        return address

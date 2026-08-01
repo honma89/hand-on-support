@@ -12,9 +12,10 @@ import { usePointBalance, useUnreadNotificationCount } from "@/lib/hooks/use-rew
 const mobileLinks = [
   { href: "/events", label: "Events", authOnly: false },
   { href: "/leaderboard", label: "Leaderboard", authOnly: false },
+  { href: "/organization", label: "Organization", authOnly: false },
+  { href: "/about", label: "About Us", authOnly: false },
   { href: "/dashboard", label: "Dashboard", authOnly: true },
   { href: "/notifications", label: "Notifications", authOnly: true },
-  { href: "/organization", label: "Organization", authOnly: true },
   { href: "/wellbeing", label: "Wellbeing", authOnly: true },
 ];
 
@@ -45,14 +46,15 @@ export function Navbar() {
           <Link href="/leaderboard" className="transition hover:text-primary">
             Leaderboard
           </Link>
+          <Link href="/organization" className="transition hover:text-primary">
+            Organization
+          </Link>
+          <Link href="/about" className="transition hover:text-primary">
+            About Us
+          </Link>
           {user && (
             <Link href="/dashboard" className="transition hover:text-primary">
               Dashboard
-            </Link>
-          )}
-          {user && (
-            <Link href="/organization" className="transition hover:text-primary">
-              Organization
             </Link>
           )}
           {user && (

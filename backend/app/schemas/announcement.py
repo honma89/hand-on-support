@@ -23,3 +23,13 @@ class AnnouncementResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class AnnouncementPublic(BaseModel):
+    id: uuid.UUID
+    title: str
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
