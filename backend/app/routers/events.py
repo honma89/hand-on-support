@@ -7,6 +7,7 @@ from app.core.exceptions import ForbiddenError, NotFoundError
 from app.db.session import get_db
 from app.deps import CurrentUser, CurrentUserOptional, require_organizer_or_admin
 from app.models.enums import EventStatus, UserRole
+from app.repositories.address_repository import AddressRepository
 from app.repositories.event_repository import EventRepository
 from app.schemas.event import EventCreate, EventDetail, EventPublic, EventUpdate
 from app.services.event_service import EventService
@@ -15,7 +16,7 @@ router = APIRouter(prefix="/events", tags=["events"])
 
 
 def get_event_service(db: AsyncSession = Depends(get_db)) -> EventService:
-    return EventService(EventRepository(db))
+    return EventService(EventRepository(db), address_repo=AddressRepository(db))
 
 
 @router.get("", response_model=list[EventPublic])
@@ -26,42 +27,25 @@ async def list_events(
     dzongkhag: str | None = None,
     upcoming_only: bool = False,
     organizer_id: uuid.UUID | None = None,
+    q: str | None = Query(default=None, description="Keyword search across title/description/category"),
+    sort_by: str = Query(default="soonest", pattern="^(soonest|popular|newest)$"),
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
     service: EventService = Depends(get_event_service),
 ):
-    # Visibility rules (separate from _assert_can_manage, which governs
-    # who can *edit* an event -- this only governs who can *see* one):
-    #
-    # - Admin: unrestricted, any status/organizer filter honored as-is.
-    # - Organizer, explicit organizer_id == self: pure "my events" view,
-    #   any status, since it's unambiguously their own request.
-    # - Organizer, no organizer_id (or someone else's): "coordination"
-    #   view -- every published event from any organizer, PLUS their own
-    #   regardless of status. They still can't see another organizer's
-    #   drafts/cancelled even if they pass that organizer's id.
-    # - Anonymous/volunteer: published-only, always, regardless of what
-    #   they ask for (prevents seeing unpublished events by omitting or
-    #   forging the status/organizer_id params).
+    # Draft/cancelled events are only visible to their own organizer or an
+    # admin. Anonymous visitors and volunteers always get published-only,
+    # regardless of what status filter they ask for -- otherwise anyone
+    # could see unpublished events by omitting/forging the status param.
     is_admin = current_user is not None and current_user.role == UserRole.ADMIN
-    is_organizer = current_user is not None and current_user.role == UserRole.ORGANIZER
-    is_own_organizer_id = is_organizer and organizer_id is not None and organizer_id == current_user.id
+    is_owning_organizer = (
+        current_user is not None
+        and current_user.role == UserRole.ORGANIZER
+        and organizer_id is not None
+        and organizer_id == current_user.id
+    )
 
-    visible_to_owner_id: uuid.UUID | None = None
-    effective_organizer_id = organizer_id
-
-    if is_admin:
-        pass  # no restriction
-    elif is_own_organizer_id:
-        pass  # organizer_id already scopes to exactly their own events
-    elif is_organizer:
-        # Coordination view: ignore any (possibly other-organizer's) id
-        # they passed for visibility purposes -- they only ever get
-        # published-from-anyone plus their own.
-        effective_organizer_id = None
-        visible_to_owner_id = current_user.id
-    else:
-        # Anonymous or volunteer.
+    if not (is_admin or is_owning_organizer):
         status_filter = EventStatus.PUBLISHED
 
     return await service.list_events(
@@ -69,17 +53,43 @@ async def list_events(
         category=category,
         dzongkhag=dzongkhag,
         upcoming_only=upcoming_only,
-        organizer_id=effective_organizer_id,
-        visible_to_owner_id=visible_to_owner_id,
+        organizer_id=organizer_id,
+        q=q,
+        sort_by=sort_by,
         offset=offset,
         limit=limit,
     )
+
+
+@router.get("/near-me", response_model=list[EventPublic])
+async def list_events_near_me(
+    current_user: CurrentUser,
+    limit: int = Query(default=20, ge=1, le=100),
+    service: EventService = Depends(get_event_service),
+):
+    """Upcoming, published events in the caller's saved dzongkhag. Returns
+    an empty list rather than an error if they haven't set an address yet."""
+    return await service.get_events_near_me(current_user, limit=limit)
 
 
 @router.get("/{event_id}", response_model=EventDetail)
 async def get_event(event_id: uuid.UUID, service: EventService = Depends(get_event_service)):
     try:
         return await service.get_event_detail(event_id)
+    except NotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
+
+
+@router.get("/{event_id}/similar", response_model=list[EventPublic])
+async def get_similar_events(
+    event_id: uuid.UUID,
+    limit: int = Query(default=5, ge=1, le=20),
+    service: EventService = Depends(get_event_service),
+):
+    """Other upcoming events worth showing on this event's detail page -
+    same category first, same dzongkhag as a fallback."""
+    try:
+        return await service.get_similar_events(event_id, limit=limit)
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
 

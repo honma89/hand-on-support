@@ -32,39 +32,28 @@ class GewogResponse(BaseModel):
 
 
 class AddressUpdate(BaseModel):
+    """Body for PUT /users/me/address."""
+
     address_type: AddressType = AddressType.BHUTAN
 
-    dzongkhag_id: uuid.UUID | None = None
+    dzongkhag_id: uuid.UUID
     dungkhag_id: uuid.UUID | None = None
-    gewog_id: uuid.UUID | None = None
-    village: str | None = None
+    gewog_id: uuid.UUID
 
-    street_address: str | None = None
-    address_line_2: str | None = None
-    city: str | None = None
-    state_province: str | None = None
-    postal_code: str | None = None
-    house_number: str | None = None
-    landmark: str | None = None
-    full_address: str | None = None
+    village: str | None = None
+    additional_details: str | None = None
 
 
 class AddressPublic(BaseModel):
     id: uuid.UUID
+
     address_type: AddressType
 
     dzongkhag_id: uuid.UUID | None
     dungkhag_id: uuid.UUID | None
     gewog_id: uuid.UUID | None
-    village: str | None
 
-    street_address: str | None
-    address_line_2: str | None
-    city: str | None
-    state_province: str | None
-    postal_code: str | None
-    house_number: str | None
-    landmark: str | None
+    village: str | None
     full_address: str | None
 
     class Config:

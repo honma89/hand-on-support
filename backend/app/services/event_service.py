@@ -4,13 +4,15 @@ from app.core.exceptions import ForbiddenError, NotFoundError
 from app.models.enums import EventStatus, UserRole
 from app.models.event import Event
 from app.models.user import User
+from app.repositories.address_repository import AddressRepository
 from app.repositories.event_repository import EventRepository
 from app.schemas.event import EventCreate, EventDetail, EventPublic, EventUpdate
 
 
 class EventService:
-    def __init__(self, event_repo: EventRepository):
+    def __init__(self, event_repo: EventRepository, address_repo: AddressRepository | None = None):
         self.event_repo = event_repo
+        self.address_repo = address_repo
 
     @staticmethod
     def _assert_can_manage(event: Event, actor: User) -> None:
@@ -27,7 +29,8 @@ class EventService:
         dzongkhag: str | None = None,
         upcoming_only: bool = False,
         organizer_id: uuid.UUID | None = None,
-        visible_to_owner_id: uuid.UUID | None = None,
+        q: str | None = None,
+        sort_by: str = "soonest",
         offset: int = 0,
         limit: int = 20,
     ) -> list[Event]:
@@ -37,7 +40,8 @@ class EventService:
             dzongkhag=dzongkhag,
             upcoming_only=upcoming_only,
             organizer_id=organizer_id,
-            visible_to_owner_id=visible_to_owner_id,
+            q=q,
+            sort_by=sort_by,
             offset=offset,
             limit=limit,
         )
@@ -56,6 +60,29 @@ class EventService:
             **EventPublic.model_validate(event).model_dump(),
             registered_count=registered_count,
             spots_remaining=spots_remaining,
+        )
+
+    async def get_similar_events(self, event_id: uuid.UUID, limit: int = 5) -> list[Event]:
+        event = await self.event_repo.get_by_id(event_id)
+        if not event:
+            raise NotFoundError("Event not found.")
+        return await self.event_repo.list_similar(event, limit=limit)
+
+    async def get_events_near_me(self, user: User, limit: int = 20) -> list[Event]:
+        """Upcoming, published events in the caller's saved dzongkhag. Empty
+        list (not an error) if they haven't set a Bhutan address yet."""
+        if not user.address_id or self.address_repo is None:
+            return []
+
+        dzongkhag_name = await self.address_repo.get_dzongkhag_name(user.address_id)
+        if not dzongkhag_name:
+            return []
+
+        return await self.event_repo.list_filtered(
+            status=EventStatus.PUBLISHED,
+            dzongkhag=dzongkhag_name,
+            upcoming_only=True,
+            limit=limit,
         )
 
     async def create_event(self, data: EventCreate, organizer: User) -> Event:
